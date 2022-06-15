@@ -153,6 +153,9 @@ const getBrilliantCheckBox = () => {
 
 const getBrilliantNumberInput = (min, max, step, value) => {
     let element = document.createElement('input');
+    if (max < 100 && step == 1) {
+        element.classList.add('smallInput');
+    }
     element.id = IdCreator.getUniqueId();
     element.onchange = () => saveSetting(element.id)(element.value);
     element.setAttribute('type', 'number'); 
@@ -414,7 +417,7 @@ const readyProgram = rawProg => ({
 
 let brilliantProgramRaw = {
     numberOfIterations: 5,
-    title: "Brilliant program 1.0",
+    title: "Basic training program 1.0",
     days: [0,8,2,9,11,10].map(movId => [{
         movementId: movId,
         sets: [
