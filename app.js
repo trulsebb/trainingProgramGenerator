@@ -327,9 +327,9 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
 
 
 // TODO
-// make movements deletable and addable
 // add big always-visible "PIVOT!"-button
 // pivot button cuts current week/cycle off and inserts a pivot week
+// add settings-div for movements with no RPE goal
 
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
@@ -434,7 +434,7 @@ let brilliantProgram = readyProgram(brilliantProgramRaw);
 
 let heliosProgramRaw = {
     numberOfIterations: 5,
-    title: "Brilliant Helios remix",
+    title: "Swiss program",
     days: [
         [ // day 
             { // movement 
