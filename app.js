@@ -417,7 +417,7 @@ const readyProgram = rawProg => ({
 
 let brilliantProgramRaw = {
     numberOfIterations: 5,
-    title: "Basic training program 1.0",
+    title: "Basic training program",
     days: [0,8,2,9,11,10].map(movId => [{
         movementId: movId,
         sets: [
