@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="theme-color" content="#72dde9">
+        <title>Powerlifting training program app</title>
+        <link rel="apple-touch-icon" href="/apple192.png">
         <style>
             .headerContainer {
                 top: 0;
@@ -219,9 +222,14 @@
 
         </style>
         <script src="app.js" defer></script>
+        <link rel="manifest" href="manifest.json">
     </head>
 
     <body>
-        
+        <script>
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register("/serviceworker.js");
+            }
+        </script>
     </body>
 </html> 
