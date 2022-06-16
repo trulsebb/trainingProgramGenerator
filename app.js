@@ -62,14 +62,24 @@ const presentableWeightValue = number => {
 
 const b62Chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const decToB62 = decValue => {
-    let newValue = '';
-    while (decValue > 0) {
-        newValue = b62Chars[decValue % 62] + newValue;
-        decValue = (decValue - (decValue % 62)) / 62;
+    if (decValue == 0) { 
+        return 0;
     }
-    return newValue;
+    let newValue = '';
+    const appendThis = (decValue < 0) ? '+' : '';
+    let absDecValue = Math.abs(decValue);
+    while (absDecValue > 0) {
+        newValue = b62Chars[absDecValue % 62] + newValue;
+        absDecValue = (absDecValue - (absDecValue % 62)) / 62;
+    }
+    return appendThis + newValue;
 };
-const b62ToDec = b62Value => b62Value.split('').map(c => b62Chars.findIndex(s => s == c)).reverse().map((v, i) => v*62**i).reduce((acc, val) => acc + val);
+const b62ToDec = b62Value => {
+    const isNegative = (b62Value[0] === '+');
+    const absB62Value = (b62Value[0] === '+') ? b62Value.slice(1) : b62Value;
+    const decValue = absB62Value.split('').map(c => b62Chars.findIndex(s => s == c)).reverse().map((v, i) => v*62**i).reduce((acc, val) => acc + val);
+    return (isNegative) ? decValue * -1 : decValue;
+};
 
 class IdCreator {
     static latestId = 1000;
@@ -330,9 +340,9 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
 
 
 // TODO
+// make movements deletable and addable
 // add big always-visible "PIVOT!"-button
 // pivot button cuts current week/cycle off and inserts a pivot week
-// add settings-div for movements with no RPE goal
 
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
@@ -360,10 +370,10 @@ if (window.location.search.slice(1)) {
     importFromShareString();
 }
 
-const PROGRESSION_LINEAR = 'linear';
-const PROGRESSION_CONSTANT = 'constant';
-const PROGRESSION_NONE = 'none';
-const PROGRESSION_STEPS = 'steps';
+const PROGRESSION_LINEAR = 1;
+const PROGRESSION_CONSTANT = 2;
+const PROGRESSION_NONE = 3;
+const PROGRESSION_STEPS = 4;
 const progressions = {
     linear: (...params) => iteration => params[0] + params[1] * iteration,
     constant: (...params) => iteration => params[0],
@@ -398,6 +408,7 @@ const getProgressionFormula = progressionTemplate => {
             return progressions.steps(...progressionTemplate.params);
         }
     }
+    return progressions.none();
 }
 
 const readyProgram = rawProg => ({
@@ -415,6 +426,54 @@ const readyProgram = rawProg => ({
     })))
 });
 
+const setParams = {
+    reps: 1,
+    rpe: 2,
+    perc: 3,
+    weight: 4,
+    repeat: 5,
+};
+
+const convertRawProgressionToArray = (typeId, rawProgression) => 
+    (typeof rawProgression == 'object') 
+    ? [typeId,
+        rawProgression.type,
+        rawProgression.params.length,
+        ...rawProgression.params]//.map(param => (param < 0) ? `+${Math.abs(param)}`: param)]
+    : [];
+
+const getSharableProgram = rawProg => [
+    rawProg.numberOfIterations,
+    //rawProg.days.length,
+    ...rawProg.days.map(day => day.map(movement => [
+        movement.movementId,
+        movement.sets.length,
+        ...movement.sets.map(set => [
+            ...convertRawProgressionToArray(setParams.reps, set.reps),
+            ...convertRawProgressionToArray(setParams.rpe, set.rpe),
+            ...convertRawProgressionToArray(setParams.perc, set.perc),
+            ...convertRawProgressionToArray(setParams.weight, set.weight),
+            ...convertRawProgressionToArray(setParams.repeat, set.repeat),
+        ])
+    ]))
+].flat(5).map(n => decToB62(n)).join('-');
+
+const parseSharableProgram = shareProgram => {
+    const atoms = shareProgram.split('-').map(atom => b62ToDec(atom));
+    const parseDays = data => data.reduce(
+        (previousVal, currentVal) => {
+
+        },
+        []
+    );
+    return {
+        numberOfIterations: atoms[0],
+        title: "Lol",
+        days: parseDays(atoms.slice(1))
+    }
+}
+
+
 let brilliantProgramRaw = {
     numberOfIterations: 5,
     title: "Basic training program",
@@ -422,17 +481,19 @@ let brilliantProgramRaw = {
         movementId: movId,
         sets: [
             {
-                reps: {type: 'linear', params: [5, -1]},
-                rpe: {type: 'constant', params: [9]},
+                reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                rpe: {type: PROGRESSION_CONSTANT, params: [9]},
             },
             {
-                reps: {type: 'linear', params: [7, -1]},
-                perc: {type: 'linear', params: [61, 5]},
-                repeat: {type: 'constant', params: [4]},
+                reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                repeat: {type: PROGRESSION_CONSTANT, params: [4]},
             }
         ]
     }])
 };
+console.log(getSharableProgram(brilliantProgramRaw).split('-').map(atom => b62ToDec(atom)));
+
 let brilliantProgram = readyProgram(brilliantProgramRaw);
 
 let heliosProgramRaw = {
@@ -444,26 +505,26 @@ let heliosProgramRaw = {
                 movementId: 0,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
+                        reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [9]},
                     },
                     {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }, { // movement 
                 movementId: 20,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
+                        reps: {type: PROGRESSION_LINEAR, params: [8, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [8]},
                     },
                     {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [10, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }
@@ -472,26 +533,26 @@ let heliosProgramRaw = {
                 movementId: 5,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
+                        reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [9]},
                     },
                     {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }, { // movement 
                 movementId: 21,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
+                        reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [9]},
                     },
                     {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }
@@ -500,26 +561,26 @@ let heliosProgramRaw = {
                 movementId: 11,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
+                        reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [9]},
                     },
                     {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }, { // movement 
                 movementId: 7,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
+                        reps: {type: PROGRESSION_LINEAR, params: [8, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [8]},
                     },
                     {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [10, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }
@@ -528,26 +589,26 @@ let heliosProgramRaw = {
                 movementId: 23,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
+                        reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [9]},
                     },
                     {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }, { // movement 
                 movementId: 22,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [8]},
+                        reps: {type: PROGRESSION_LINEAR, params: [5, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [8]},
                     },
                     {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [7, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }
@@ -556,32 +617,33 @@ let heliosProgramRaw = {
                 movementId: 25,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
+                        reps: {type: PROGRESSION_LINEAR, params: [8, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [8]},
                     },
                     {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [10, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }, { // movement 
                 movementId: 23,
                 sets: [
                     {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
+                        reps: {type: PROGRESSION_LINEAR, params: [8, -1]},
+                        rpe: {type: PROGRESSION_CONSTANT, params: [8]},
                     },
                     {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
+                        reps: {type: PROGRESSION_LINEAR, params: [10, -1]},
+                        perc: {type: PROGRESSION_LINEAR, params: [61, 5]},
+                        repeat: {type: PROGRESSION_CONSTANT, params: [4]},
                     }
                 ]
             }
         ],
 ]};
 let heliosProgram = readyProgram(heliosProgramRaw);
+console.log(getSharableProgram(heliosProgramRaw));
 
 let oldSchoolProgramRaw = {
     numberOfIterations: 6,
@@ -590,9 +652,9 @@ let oldSchoolProgramRaw = {
         movementId: movId,
         sets: [
             {
-                reps: {type: 'constant', params: [10]},
-                perc: {type: 'constant', params: [58]},
-                repeat: {type: 'linear', params: [10, -1]},
+                reps: {type: PROGRESSION_CONSTANT, params: [10]},
+                perc: {type: PROGRESSION_CONSTANT, params: [58]},
+                repeat: {type: PROGRESSION_LINEAR, params: [10, -1]},
             }
         ]
     }])
