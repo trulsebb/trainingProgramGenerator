@@ -444,7 +444,7 @@ const convertRawProgressionToArray = (typeId, rawProgression) =>
 
 const getSharableProgram = rawProg => [
     rawProg.numberOfIterations,
-    //rawProg.days.length,
+    rawProg.days.length,
     ...rawProg.days.map(day => day.map(movement => [
         movement.movementId,
         movement.sets.length,
@@ -456,20 +456,26 @@ const getSharableProgram = rawProg => [
             ...convertRawProgressionToArray(setParams.repeat, set.repeat),
         ])
     ]))
-].flat(5).map(n => decToB62(n)).join('-');
+]//.flat(5).map(n => decToB62(n)).join('-');
 
 const parseSharableProgram = shareProgram => {
     const atoms = shareProgram.split('-').map(atom => b62ToDec(atom));
-    const parseDays = data => data.reduce(
-        (previousVal, currentVal) => {
-
-        },
-        []
-    );
+    const parseDays = (nrOfDays, data) => {
+        let level = 0;
+        let allCounters = [0,0,0,0,0,nrOfDays];
+        const lookup = [false, true, false, true, false, false];
+        let isNew = true;
+        data.forEach(value => {
+            level = allCounters.findIndex(counter => counter > 0);
+            if (isNew) {
+                
+            }
+        });
+    }
     return {
         numberOfIterations: atoms[0],
         title: "Lol",
-        days: parseDays(atoms.slice(1))
+        days: parseDays(atoms[1],atoms.slice(2))
     }
 }
 
@@ -492,7 +498,7 @@ let brilliantProgramRaw = {
         ]
     }])
 };
-console.log(getSharableProgram(brilliantProgramRaw).split('-').map(atom => b62ToDec(atom)));
+console.log(getSharableProgram(brilliantProgramRaw));//.split('-').map(atom => b62ToDec(atom)));
 
 let brilliantProgram = readyProgram(brilliantProgramRaw);
 
