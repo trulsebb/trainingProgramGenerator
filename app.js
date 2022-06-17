@@ -437,41 +437,79 @@ const setParams = {
 const convertRawProgressionToArray = (typeId, rawProgression) => 
     (typeof rawProgression == 'object') 
     ? [typeId,
+        1,
         rawProgression.type,
         rawProgression.params.length,
-        ...rawProgression.params]//.map(param => (param < 0) ? `+${Math.abs(param)}`: param)]
+        rawProgression.params]//.map(param => (param < 0) ? `+${Math.abs(param)}`: param)]
     : [];
 
 const getSharableProgram = rawProg => [
     rawProg.numberOfIterations,
     rawProg.days.length,
-    ...rawProg.days.map(day => day.map(movement => [
-        movement.movementId,
-        movement.sets.length,
-        ...movement.sets.map(set => [
-            ...convertRawProgressionToArray(setParams.reps, set.reps),
-            ...convertRawProgressionToArray(setParams.rpe, set.rpe),
-            ...convertRawProgressionToArray(setParams.perc, set.perc),
-            ...convertRawProgressionToArray(setParams.weight, set.weight),
-            ...convertRawProgressionToArray(setParams.repeat, set.repeat),
+    rawProg.days.map(day => [
+        day.length,
+        day.map(movement => [
+            movement.movementId,
+            movement.sets.length,
+            movement.sets.map(set => [
+                Object.keys(set).length,
+                ...convertRawProgressionToArray(setParams.reps, set.reps),
+                ...convertRawProgressionToArray(setParams.rpe, set.rpe),
+                ...convertRawProgressionToArray(setParams.perc, set.perc),
+                ...convertRawProgressionToArray(setParams.weight, set.weight),
+                ...convertRawProgressionToArray(setParams.repeat, set.repeat),
+            ])
         ])
-    ]))
-]//.flat(5).map(n => decToB62(n)).join('-');
+    ])
+].flat(8).map(n => decToB62(n)).join('-');
 
 const parseSharableProgram = shareProgram => {
     const atoms = shareProgram.split('-').map(atom => b62ToDec(atom));
     const parseDays = (nrOfDays, data) => {
-        let level = 0;
-        let allCounters = [0,0,0,0,0,nrOfDays];
-        const lookup = [false, true, false, true, false, false];
-        let isNew = true;
+        let allCounters = [0,0,nrOfDays];
+        const lookup = [0,1,1];
+        let result = [];
+        let findCounter = true;
+        let findId = true;
         data.forEach(value => {
-            level = allCounters.findIndex(counter => counter > 0);
-            if (isNew) {
-                
+            const level = allCounters.findIndex(counter => counter > 0);
+            console.log(`level: ${level}, value: ${value}`);
+            if (findId) { 
+                if (level == 2) {
+                    result.push([value]);
+                } else if (level == 1) {
+                    result.at(-1).push([value, []])
+                } else if (level == 0) {
+                    result.at(-1).at(-1).push([value, []])
+                }
+                findId = false;
+                findCounter = true;
+            } else if (level > -1) {
+                if (findCounter) {
+                    console.log(`adding: ${value}, as counter for level ${level-1}`);
+                    allCounters[level-1] = value;
+                    findCounter = false;
+                    findId = lookup[level-1] == 1;
+                } else {
+                    console.log(`found value: ${value}`);
+                    if (level == 2) {
+                        result.at(-1).push(value);
+                    } else if (level == 1) {
+                        result.at(-1).at(-1).push(value)
+                    } else if (level == 0) {
+                        result.at(-1).at(-1).at(-1).push(value)
+                    }
+                }
+                --allCounters[level];
+                if (allCounters.slice(0,level+1).every(v => v==0)) {
+                    findCounter = true;
+                    findId = true;
+                }
+            
             }
         });
-    }
+        return result;
+    };
     return {
         numberOfIterations: atoms[0],
         title: "Lol",
@@ -498,7 +536,7 @@ let brilliantProgramRaw = {
         ]
     }])
 };
-console.log(getSharableProgram(brilliantProgramRaw));//.split('-').map(atom => b62ToDec(atom)));
+console.log(getSharableProgram(brilliantProgramRaw).split('-').map(atom => b62ToDec(atom)).join(','));
 
 let brilliantProgram = readyProgram(brilliantProgramRaw);
 
