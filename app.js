@@ -62,14 +62,24 @@ const presentableWeightValue = number => {
 
 const b62Chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const decToB62 = decValue => {
-    let newValue = '';
-    while (decValue > 0) {
-        newValue = b62Chars[decValue % 62] + newValue;
-        decValue = (decValue - (decValue % 62)) / 62;
+    if (decValue == 0) { 
+        return 0;
     }
-    return newValue;
+    let newValue = '';
+    const appendThis = (decValue < 0) ? '+' : '';
+    let absDecValue = Math.abs(decValue);
+    while (absDecValue > 0) {
+        newValue = b62Chars[absDecValue % 62] + newValue;
+        absDecValue = (absDecValue - (absDecValue % 62)) / 62;
+    }
+    return appendThis + newValue;
 };
-const b62ToDec = b62Value => b62Value.split('').map(c => b62Chars.findIndex(s => s == c)).reverse().map((v, i) => v*62**i).reduce((acc, val) => acc + val);
+const b62ToDec = b62Value => {
+    const isNegative = (b62Value[0] === '+');
+    const absB62Value = (b62Value[0] === '+') ? b62Value.slice(1) : b62Value;
+    const decValue = absB62Value.split('').map(c => b62Chars.findIndex(s => s == c)).reverse().map((v, i) => v*62**i).reduce((acc, val) => acc + val);
+    return (isNegative) ? decValue * -1 : decValue;
+};
 
 class IdCreator {
     static latestId = 1000;
@@ -330,9 +340,9 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
 
 
 // TODO
+// make movements deletable and addable
 // add big always-visible "PIVOT!"-button
 // pivot button cuts current week/cycle off and inserts a pivot week
-// add settings-div for movements with no RPE goal
 
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
@@ -360,10 +370,10 @@ if (window.location.search.slice(1)) {
     importFromShareString();
 }
 
-const PROGRESSION_LINEAR = 'linear';
-const PROGRESSION_CONSTANT = 'constant';
-const PROGRESSION_NONE = 'none';
-const PROGRESSION_STEPS = 'steps';
+const PROGRESSION_LINEAR = 1;
+const PROGRESSION_CONSTANT = 2;
+const PROGRESSION_NONE = 3;
+const PROGRESSION_STEPS = 4;
 const progressions = {
     linear: (...params) => iteration => params[0] + params[1] * iteration,
     constant: (...params) => iteration => params[0],
@@ -398,6 +408,7 @@ const getProgressionFormula = progressionTemplate => {
             return progressions.steps(...progressionTemplate.params);
         }
     }
+    return progressions.none();
 }
 
 const readyProgram = rawProg => ({
@@ -415,189 +426,125 @@ const readyProgram = rawProg => ({
     })))
 });
 
-let brilliantProgramRaw = {
-    numberOfIterations: 5,
-    title: "Basic training program",
-    days: [0,8,2,9,11,10].map(movId => [{
-        movementId: movId,
-        sets: [
-            {
-                reps: {type: 'linear', params: [5, -1]},
-                rpe: {type: 'constant', params: [9]},
-            },
-            {
-                reps: {type: 'linear', params: [7, -1]},
-                perc: {type: 'linear', params: [61, 5]},
-                repeat: {type: 'constant', params: [4]},
-            }
-        ]
-    }])
+const setParams = {
+    reps: 1,
+    rpe: 2,
+    perc: 3,
+    weight: 4,
+    repeat: 5,
 };
-let brilliantProgram = readyProgram(brilliantProgramRaw);
 
-let heliosProgramRaw = {
-    numberOfIterations: 5,
-    title: "Swiss program",
-    days: [
-        [ // day 
-            { // movement 
-                movementId: 0,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }, { // movement 
-                movementId: 20,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }
-        ],[ // day 
-            { // movement 
-                movementId: 5,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }, { // movement 
-                movementId: 21,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }
-        ],[ // day 
-            { // movement 
-                movementId: 11,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }, { // movement 
-                movementId: 7,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }
-        ],[ // day 
-            { // movement 
-                movementId: 23,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [9]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }, { // movement 
-                movementId: 22,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [5, -1]},
-                        rpe: {type: 'constant', params: [8]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [7, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }
-        ],[ // day 
-            { // movement 
-                movementId: 25,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }, { // movement 
-                movementId: 23,
-                sets: [
-                    {
-                        reps: {type: 'linear', params: [8, -1]},
-                        rpe: {type: 'constant', params: [8]},
-                    },
-                    {
-                        reps: {type: 'linear', params: [10, -1]},
-                        perc: {type: 'linear', params: [61, 5]},
-                        repeat: {type: 'constant', params: [4]},
-                    }
-                ]
-            }
-        ],
-]};
-let heliosProgram = readyProgram(heliosProgramRaw);
+const convertRawProgressionToArray = (typeId, rawProgression) => 
+    (typeof rawProgression == 'object') 
+    ? [typeId,
+        1, // serves as length in parser
+        rawProgression.type,
+        rawProgression.params.length,
+        rawProgression.params]//.map(param => (param < 0) ? `+${Math.abs(param)}`: param)]
+    : [];
 
-let oldSchoolProgramRaw = {
-    numberOfIterations: 6,
-    title: "Old school linear",
-    days: [0,8,2,9,11,10].map(movId => [{
-        movementId: movId,
-        sets: [
-            {
-                reps: {type: 'constant', params: [10]},
-                perc: {type: 'constant', params: [58]},
-                repeat: {type: 'linear', params: [10, -1]},
+const getSharableProgram = rawProg => [
+    rawProg.numberOfIterations, // serves as id in parser
+    rawProg.days.length,
+    rawProg.days.map(day => [
+        0, // serves as id in parser
+        day.length,
+        day.map(movement => [
+            movement.movementId,
+            movement.sets.length,
+            movement.sets.map(set => [
+                0, // serves as id in parser
+                Object.keys(set).length,
+                ...convertRawProgressionToArray(setParams.reps, set.reps),
+                ...convertRawProgressionToArray(setParams.rpe, set.rpe),
+                ...convertRawProgressionToArray(setParams.perc, set.perc),
+                ...convertRawProgressionToArray(setParams.weight, set.weight),
+                ...convertRawProgressionToArray(setParams.repeat, set.repeat),
+            ])
+        ])
+    ])
+].flat(8).map(n => decToB62(n)).map(e => (e.length > 1) ? `-${e.length}${e}` : e).join('');
+
+const parseShortened = d => d.split(/(?=-)/g).map(chunk => (chunk[0] === '-') ? [chunk.slice(2,2+Number(chunk[1])), ...chunk.slice(2+Number(chunk[1])).split('')] : chunk.split('')).flat();
+
+const parseSharableProgram = (title, shareProgram) => {
+    const atoms = parseShortened(shareProgram).map(atom => b62ToDec(atom));
+    const parseDays = (nrOfDays, data) => {
+        let allCounters = [0,0,0,0,0,0,nrOfDays];
+        let result = [];
+        let findCounter = false;
+        let findId = true;
+        data.forEach(value => {
+            const level = allCounters.findIndex(counter => counter > 0);
+            if (findId) { 
+                if (level == 6) result.push([value]);
+                else if (level == 5) result.at(-1).push([value]);
+                else if (level == 4) result.at(-1).at(-1).push([value]);
+                else if (level == 3) result.at(-1).at(-1).at(-1).push([value]);
+                else if (level == 2) result.at(-1).at(-1).at(-1).at(-1).push([value, []]);
+                else if (level == 1) result.at(-1).at(-1).at(-1).at(-1).at(-1).push([value, []]);
+                else if (level == 0) result.at(-1).at(-1).at(-1).at(-1).at(-1).at(-1).push([value, []]);
+                findId = false;
+                findCounter = true;
+            } else if (level > -1) {
+                if (findCounter) {
+                    allCounters[level-1] = value;
+                    findCounter = false;
+                    findId = level > 2;
+                } else {
+                    if (level == 6) result.at(-1).push([value]);
+                    else if (level == 5) result.at(-1).at(-1).push(value);
+                    else if (level == 4) result.at(-1).at(-1).at(-1).push(value);
+                    else if (level == 3) result.at(-1).at(-1).at(-1).at(-1).push(value);
+                    else if (level == 2) result.at(-1).at(-1).at(-1).at(-1).at(-1).push(value);
+                    else if (level == 1) result.at(-1).at(-1).at(-1).at(-1).at(-1).at(-1).push(value);
+                    else if (level == 0) result.at(-1).at(-1).at(-1).at(-1).at(-1).at(-1).at(-1).push(value)
+                }
+                --allCounters[level];
+                if (allCounters.slice(0,level+1).every(v => v==0)) {
+                    findCounter = true;
+                    findId = true;
+                }
             }
-        ]
-    }])
-};
-let oldSchoolProgram = readyProgram(oldSchoolProgramRaw);
+        });
+        return result;
+    };
+    const parseProgression = data => ({
+        type: data[0][0],
+        params: data[0].slice(1).flat()
+    });
+    return {
+        numberOfIterations: atoms[0],
+        title: title,
+        days: parseDays(atoms[1],atoms.slice(2))
+            .filter(day => typeof day === 'object' && day.length > 0)
+            .map(day => (day.filter(movement => typeof movement === 'object' && movement.length > 0).map(movement => ({
+                movementId: movement[0],
+                sets: movement.slice(1)
+                    .filter(set => typeof set === 'object' && set.length > 0)
+                    .map(set => {
+                        let setObj = {};
+                        set.slice(1).map(setParam => {
+                            if (setParam[0] == setParams.reps) setObj.reps = parseProgression(setParam.slice(1));
+                            else if (setParam[0] == setParams.rpe) setObj.rpe = parseProgression(setParam.slice(1));
+                            else if (setParam[0] == setParams.perc) setObj.perc = parseProgression(setParam.slice(1));
+                            else if (setParam[0] == setParams.weight) setObj.weight = parseProgression(setParam.slice(1));
+                            else if (setParam[0] == setParams.repeat) setObj.repeat = parseProgression(setParam.slice(1));
+                        });
+                        return setObj;
+                    })
+            }))))
+    }
+}
+
+const basicProgramRaw = "5601020211125-2+1212190311127-2+13112Z55121401820211125-2+1212190311127-2+13112Z55121401220211125-2+1212190311127-2+13112Z55121401920211125-2+1212190311127-2+13112Z55121401b20211125-2+1212190311127-2+13112Z55121401a20211125-2+1212190311127-2+13112Z551214";
+const basicProgram = readyProgram(parseSharableProgram('Basic training program', basicProgramRaw));
+
+const swissProgramRaw = "5502020211125-2+1212190311127-2+13112Z551214k20211128-2+121218031112a-2+13112Z55121402520211125-2+1212190311127-2+13112Z551214l20211125-2+1212190311127-2+13112Z55121402b20211125-2+1212190311127-2+13112Z551214720211128-2+121218031112a-2+13112Z55121402n20211125-2+1212190311127-2+13112Z551214m20211125-2+1212180311127-2+13112Z55121402p20211128-2+121218031112a-2+13112Z551214n20211128-2+121218031112a-2+13112Z551214";
+const swissProgram = readyProgram(parseSharableProgram("Swiss program", swissProgramRaw));
+
+let oldSchoolRaw = "660101031121a3121W5112a-2+10181031121a3121W5112a-2+10121031121a3121W5112a-2+10191031121a3121W5112a-2+101b1031121a3121W5112a-2+101a1031121a3121W5112a-2+1";
+let oldSchoolProgram = readyProgram(parseSharableProgram("Oldschool linear", oldSchoolRaw));
 
 // add stuff to document
 const renderProgram = (programSchemes) => {
@@ -639,4 +586,4 @@ const renderProgram = (programSchemes) => {
     return getBrilliantElement('div', ['appContainer'], [headerContainer, programContainer]);
 };
 
-document.body.append(renderProgram([brilliantProgram, heliosProgram, oldSchoolProgram]));
+document.body.append(renderProgram([basicProgram, swissProgram, oldSchoolProgram]));
