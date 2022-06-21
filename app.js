@@ -344,13 +344,6 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     return dayContainer;
 };
 
-
-
-// TODO
-// make movements deletable and addable
-// add big always-visible "PIVOT!"-button
-// pivot button cuts current week/cycle off and inserts a pivot week
-
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
     selectElement.id = 9999; //'9-9-9-9-9';
