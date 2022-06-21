@@ -83,6 +83,9 @@ const b62ToDec = b62Value => {
 
 class IdCreator {
     static latestId = 1000;
+    static resetId() {
+        this.latestId = 1000;
+    }
     static getUniqueId() {
         return this.latestId++;
     }
@@ -113,17 +116,20 @@ const getKeyValFromB62 = b62 => {
 const parseShareString = shareString => shareString.split('-').map(b62 => getKeyValFromB62(b62));
 
 const autosave = () => {
-    let serializedKey = new Date().toISOString().slice(0,16);
-    let stringToSave = getShareString();
-    if (stringToSave != '') {
-        localStorage.setItem(`${serializedKey}(autosave)`, getShareString());
+    const dateString = new Date().toISOString().slice(0,10);
+    const programSelect = document.getElementById('9999');
+    const previousSetting = getSetting('9999')(0);
+    const serializedKey = programSelect.options[previousSetting].text;
+    const stringToSave = getShareString();
+    if (stringToSave.split('-').length > 1) {
+        localStorage.setItem(`${serializedKey} ${dateString}`, getShareString());
     }
 }
 
-const importFromShareString = () => {
+const importFromShareString = (shareString) => {
     autosave();
     removeStoredInputKeys();
-    parseShareString(window.location.search.slice(1)).map(row => saveSetting(row[0])(row[1]));
+    parseShareString(shareString).map(row => saveSetting(row[0])(row[1]));
 };
 
 const saveSetting = elementId => value => localStorage.setItem(elementId, value);
@@ -193,7 +199,7 @@ const getShareContainer = () => {
         }
         hiddenShareLinkContainer.append(
             ...getStoredKeys()
-                .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}T/g))
+                .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}$/g))
                 .sort()
                 .map(k => {
                     let shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
@@ -212,7 +218,9 @@ const getShareContainer = () => {
                     };
                     const restoreButton = getBrilliantElement('a', ['sharelink'], 'Restore');
                     restoreButton.onclick = () => {
-                        window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}?${textBoxWithString.value}`;
+                        importFromShareString(textBoxWithString.value);
+                        ProgramContainer.renderProgram();
+                        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}?${textBoxWithString.value}`;
                     };
                     shareStringContainer.append(removeButton, textBoxWithString, copyLinkButton, restoreButton);
                     return shareStringContainer;
@@ -222,8 +230,7 @@ const getShareContainer = () => {
         let shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
         const saveSerializedButton = getBrilliantElement('a', ['sharelink'], 'Save current');
         saveSerializedButton.onclick = () => {
-            let serializedKey = new Date().toISOString().slice(0,16);
-            localStorage.setItem(serializedKey, getShareString());
+            autosave();
             hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
         }
         shareStringContainer.append(saveSerializedButton);
@@ -248,7 +255,8 @@ const getBrilliantAnchorLinkList = programScheme => {
     const cleanSlate = getBrilliantElement('a', ['clearlink'], '🗑');
     cleanSlate.onclick = () => {
         removeStoredInputKeys();
-        window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
+        ProgramContainer.renderProgram();
+        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
     };
     linkList.append(shareLink, cleanSlate, hiddenShareLinkContainer);
     
@@ -262,8 +270,7 @@ const getBrilliantAnchorLinkList = programScheme => {
 // | Movement 2 | bench    | -> | larsen (changed) | -> | larsen             |
 // | Movement 3 | deadlift | -> | deadlift         | -> | stiffleg (changed) |
 // +------------+----------+----+------------------+----+--------------------+
-// The movement setting works like this: 2-2-8 meaning week2-day2-'Larsen' then that change
-// cascades to week3, week4 etc.
+// changes on movement on week2 cascades to week3, week4 etc.
 const getMovementSelect = (defaultvalue, cascadeId) => {
     const selectElement = getBrilliantElement('select', ['movementselect']);
     selectElement.setAttribute('cascade', cascadeId);
@@ -337,13 +344,6 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     return dayContainer;
 };
 
-
-
-// TODO
-// make movements deletable and addable
-// add big always-visible "PIVOT!"-button
-// pivot button cuts current week/cycle off and inserts a pivot week
-
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
     selectElement.id = 9999; //'9-9-9-9-9';
@@ -352,7 +352,8 @@ const getProgramSelect = (programSchemes) => {
         autosave();
         removeStoredInputKeys();
         saveSetting(selectElement.id)(selectElement.value);
-        window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
+        ProgramContainer.renderProgram();
+        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
     };
     selectElement.append(...programSchemes.map((programScheme, index) => {
         const option = getBrilliantElement('option', [], programScheme.title);
@@ -363,11 +364,6 @@ const getProgramSelect = (programSchemes) => {
             return option;
     }));
     return selectElement;
-}
-
-// import settings from sharestring
-if (window.location.search.slice(1)) {
-    importFromShareString();
 }
 
 const PROGRESSION_LINEAR = 1;
@@ -537,53 +533,72 @@ const parseSharableProgram = (title, shareProgram) => {
     }
 }
 
-const basicProgramRaw = "5601020211125-2+1212190311127-2+13112Z55121401820211125-2+1212190311127-2+13112Z55121401220211125-2+1212190311127-2+13112Z55121401920211125-2+1212190311127-2+13112Z55121401b20211125-2+1212190311127-2+13112Z55121401a20211125-2+1212190311127-2+13112Z551214";
-const basicProgram = readyProgram(parseSharableProgram('Basic training program', basicProgramRaw));
+const standardPrograms = [
+    {
+        title: "Basic training program",
+        shareString: "5601020211125-2+1212190311127-2+13112Z55121401820211125-2+1212190311127-2+13112Z55121401220211125-2+1212190311127-2+13112Z55121401920211125-2+1212190311127-2+13112Z55121401b20211125-2+1212190311127-2+13112Z55121401a20211125-2+1212190311127-2+13112Z551214"
+    },
+    {
+        title: "Swiss program",
+        shareString: "5502020211125-2+1212190311127-2+13112Z551214k20211128-2+121218031112a-2+13112Z55121402520211125-2+1212190311127-2+13112Z551214l20211125-2+1212190311127-2+13112Z55121402b20211125-2+1212190311127-2+13112Z551214720211128-2+121218031112a-2+13112Z55121402n20211125-2+1212190311127-2+13112Z551214m20211125-2+1212180311127-2+13112Z55121402p20211128-2+121218031112a-2+13112Z551214n20211128-2+121218031112a-2+13112Z551214"
+    },
+    {
+        title: "Oldschool linear",
+        shareString: "660101031121a3121W5112a-2+10181031121a3121W5112a-2+10121031121a3121W5112a-2+10191031121a3121W5112a-2+101b1031121a3121W5112a-2+101a1031121a3121W5112a-2+1"
+    },
+];
 
-const swissProgramRaw = "5502020211125-2+1212190311127-2+13112Z551214k20211128-2+121218031112a-2+13112Z55121402520211125-2+1212190311127-2+13112Z551214l20211125-2+1212190311127-2+13112Z55121402b20211125-2+1212190311127-2+13112Z551214720211128-2+121218031112a-2+13112Z55121402n20211125-2+1212190311127-2+13112Z551214m20211125-2+1212180311127-2+13112Z55121402p20211128-2+121218031112a-2+13112Z551214n20211128-2+121218031112a-2+13112Z551214";
-const swissProgram = readyProgram(parseSharableProgram("Swiss program", swissProgramRaw));
 
-let oldSchoolRaw = "660101031121a3121W5112a-2+10181031121a3121W5112a-2+10121031121a3121W5112a-2+10191031121a3121W5112a-2+101b1031121a3121W5112a-2+101a1031121a3121W5112a-2+1";
-let oldSchoolProgram = readyProgram(parseSharableProgram("Oldschool linear", oldSchoolRaw));
+class ProgramContainer {
+    static appContainer = getBrilliantElement('div', ['appContainer']);
+    static first = true;
+    static renderProgram() {
+        IdCreator.resetId();
+        while (this.appContainer.firstChild) {
+            this.appContainer.removeChild(this.appContainer.firstChild);
+        }
+        const programContainer = getBrilliantElement('div', ['programContainer']);
+        programContainer.addEventListener('render', event => {
+            while (programContainer.firstChild) {
+                programContainer.removeChild(programContainer.firstChild);
+            }
+            const actualProgram = event.detail.actualProgram;
+            var iterations = [...Array(actualProgram.numberOfIterations).keys()];
+            programContainer.append(
+                ...iterations.map(currentIteration => {
+                    let cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
+                    let cycleContainer = getBrilliantElement('div', ['blockContainer'], cycleHeader);
+                    cycleContainer.id = `cycle${currentIteration}`;
+                    cycleContainer.append(
+                        ...actualProgram.days.map((movements, index) => getSessionMovementTable(currentIteration, index, movements))
+                    );
+                    return cycleContainer;
+                })
+            );
+        });
+    
+        const rawProgramSetUp = standardPrograms[getSetting('9999')(0)];
+        const programSetUp = readyProgram(parseSharableProgram(rawProgramSetUp.title, rawProgramSetUp.shareString));
+        programContainer.dispatchEvent(new CustomEvent('render', {detail: {actualProgram: programSetUp}}));
+    
+        const headerContainer = getBrilliantElement('div', ['headerContainer']);
+        headerContainer.addEventListener('render', event => {
+            while (headerContainer.firstChild) {
+                headerContainer.removeChild(headerContainer.firstChild);
+            }
+            headerContainer.append(
+                getProgramSelect(standardPrograms),
+                getBrilliantAnchorLinkList(programSetUp)
+            );
+        });
+        headerContainer.dispatchEvent(new Event('render'));
+        this.appContainer.append(headerContainer, programContainer);
+        if (this.first) {
+            document.body.append(this.appContainer);
+            this.first = false;
+        }
+    }
+}
 
 // add stuff to document
-const renderProgram = (programSchemes) => {
-    const programContainer = getBrilliantElement('div', ['programContainer']);
-    programContainer.addEventListener('render', event => {
-        while (programContainer.firstChild) {
-            programContainer.removeChild(programContainer.firstChild);
-        }
-        const actualProgram = event.detail.actualProgram;
-        var iterations = [...Array(actualProgram.numberOfIterations).keys()];
-        programContainer.append(
-            ...iterations.map(currentIteration => {
-                let cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
-                let cycleContainer = getBrilliantElement('div', ['blockContainer'], cycleHeader);
-                cycleContainer.id = `cycle${currentIteration}`;
-                cycleContainer.append(
-                    ...actualProgram.days.map((movements, index) => getSessionMovementTable(currentIteration, index, movements))
-                );
-                return cycleContainer;
-            })
-        );
-    });
-
-    const programSetUp = programSchemes[getSetting('9999')(0)];
-    programContainer.dispatchEvent(new CustomEvent('render', {detail: {actualProgram: programSetUp}}));
-
-    const headerContainer = getBrilliantElement('div', ['headerContainer']);
-    headerContainer.addEventListener('render', event => {
-        while (headerContainer.firstChild) {
-            headerContainer.removeChild(headerContainer.firstChild);
-        }
-        headerContainer.append(
-            getProgramSelect(programSchemes),
-            getBrilliantAnchorLinkList(programSetUp)
-        );
-    });
-    headerContainer.dispatchEvent(new Event('render'));
-    
-    return getBrilliantElement('div', ['appContainer'], [headerContainer, programContainer]);
-};
-
-document.body.append(renderProgram([basicProgram, swissProgram, oldSchoolProgram]));
+ProgramContainer.renderProgram();
