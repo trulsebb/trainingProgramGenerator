@@ -126,13 +126,10 @@ const autosave = () => {
     }
 }
 
-const importFromShareString = (shareString) => {
-    autosave();
-    removeStoredInputKeys();
-    parseShareString(shareString).map(row => saveSetting(row[0])(row[1]));
-};
+const saveSetting = elementId => value => (typeof value === 'number' && !Number.isNaN(value)) 
+    ? localStorage.setItem(elementId, value)
+    : localStorage.removeItem(elementId);
 
-const saveSetting = elementId => value => localStorage.setItem(elementId, value);
 const getSetting = elementId => defaultValue => {
     if (!localStorage.getItem(elementId)) {
         return defaultValue;
@@ -140,6 +137,11 @@ const getSetting = elementId => defaultValue => {
     return localStorage.getItem(elementId);
 };
 
+const importFromShareString = (shareString) => {
+    autosave();
+    removeStoredInputKeys();
+    parseShareString(shareString).map(row => saveSetting(row[0])(row[1]));
+};
 
 // ui
 const getBrilliantElement = (type, classes, content) => {
@@ -189,6 +191,16 @@ const getBrilliantDisabledInput = (value) => {
     element.disabled = true;
     return element;
 };
+
+const getBrilliantDateInput = (value) => {
+    let element = document.createElement('input');
+    element.id = IdCreator.getUniqueId();
+    element.onchange = () => saveSetting(element.id)(element.valueAsNumber/100000);
+    element.setAttribute('type', 'date');
+    const useValue = getSetting(element.id)(value)*100000;
+    if (useValue) element.valueAsNumber = useValue;
+    return element;
+}
 
 const getShareContainer = () => {
     const hiddenShareLinkContainer = getBrilliantElement('div', ['shareLinkContainer']);
@@ -301,7 +313,18 @@ const getMovementSelect = (defaultvalue, cascadeId) => {
 };
 
 const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
-    let dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
+    const daySpan = getBrilliantElement('span', ['daySpan']);
+    const dateButton = getBrilliantElement('button', ['dateButton'], '📅');
+    const dateInput = getBrilliantDateInput(null);
+    const formatDate = dateStr => new Date(dateStr).toLocaleDateString(undefined, {weekday: 'long', month: 'long', day: 'numeric'});
+    dateInput.hidden = true;
+    dateInput.addEventListener("change", () => { 
+        daySpan.innerHTML = (dateInput.value.length > 1) ? formatDate(dateInput.value) : `Day ${dayIndex + 1}`;
+        dateInput.hidden = true;
+    });
+    daySpan.innerHTML = (dateInput.value.length > 1) ? formatDate(dateInput.value) : `Day ${dayIndex + 1}`;
+    dateButton.onclick = () => { dateInput.hidden = !dateInput.hidden; };
+    let dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], [daySpan, dateInput, dateButton]));
     dayContainer.append(...movements.map(((movement, movementIndex) => {
         let _setRefs = [];
         let sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
