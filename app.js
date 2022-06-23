@@ -231,8 +231,10 @@ const getShareContainer = () => {
             autosave();
             hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
         }
+        const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
+        hideSettingsButton.onclick = () => { hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden; };
         shareStringContainer.append(saveSerializedButton);
-        hiddenShareLinkContainer.append(shareStringContainer);
+        hiddenShareLinkContainer.append(shareStringContainer, hideSettingsButton);
     });
     return hiddenShareLinkContainer;
 };
@@ -257,8 +259,8 @@ const getBrilliantAnchorLinkList = programScheme => {
     }
     
     linkList.append(
-        programSettingsLink, 
         ...weekLinks, 
+        programSettingsLink,
         shareLink, 
         ProgramSettingsContainer.programSettingsContainer, 
         hiddenShareLinkContainer
@@ -401,7 +403,12 @@ class ProgramSettingsContainer {
                 ])
             );
         }
-        programSettingsContainer.hidden = true;
+        if ([...this.movementsMaxInputMap.values()].every(maxInput => maxInput.value > 0)) {
+            programSettingsContainer.hidden = true;
+        }
+        const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
+        hideSettingsButton.onclick = this.toggleVisibility;
+        programSettingsContainer.append(hideSettingsButton);
 
         this.programSettingsContainer = programSettingsContainer;
     }
