@@ -58,8 +58,6 @@ const presentableWeightValue = number => {
     return rounded > 0 ? rounded : '';
 };
 
-//const movementsMap = new Map(movements.map(group => group.movements.map(mov => [mov.mid, mov.label])).flat());
-
 const b62Chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const decToB62 = decValue => {
     if (decValue == 0) { 
@@ -241,24 +239,30 @@ const getShareContainer = () => {
 
 const getBrilliantAnchorLinkList = programScheme => {
     const iterations = [...Array(programScheme.numberOfIterations).keys()];
-    const linkList = getBrilliantElement('div', ['stickylinks'], iterations.map(iteration => {
+    const linkList = getBrilliantElement('div', ['stickylinks']);
+    const programSettingsLink = getBrilliantElement('a', ['settingsLink'], '🛠');
+    programSettingsLink.onclick = () => {
+        ProgramSettingsContainer.toggleVisibility();
+    }
+    const weekLinks = iterations.map(iteration => {
         const link = getBrilliantElement('a', ['cyclelink'], `Week ${iteration + 1}`);
         link.href = `#cycle${iteration}`;
         return link;
-    }));
+    });
     const shareLink = getBrilliantElement('a', ['sharelink'], '💾');
     const hiddenShareLinkContainer = getShareContainer();
     shareLink.onclick = () => {
         hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
         hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden;
     }
-    const cleanSlate = getBrilliantElement('a', ['clearlink'], '🗑');
-    cleanSlate.onclick = () => {
-        removeStoredInputKeys();
-        ProgramContainer.renderProgram();
-        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
-    };
-    linkList.append(shareLink, cleanSlate, hiddenShareLinkContainer);
+    
+    linkList.append(
+        programSettingsLink, 
+        ...weekLinks, 
+        shareLink, 
+        ProgramSettingsContainer.programSettingsContainer, 
+        hiddenShareLinkContainer
+    );
     
     return linkList;
 };
@@ -301,11 +305,11 @@ const getMovementSelect = (defaultvalue, cascadeId) => {
 };
 
 const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
-    let dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
+    const dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
     dayContainer.append(...movements.map(((movement, movementIndex) => {
-        let _setRefs = [];
-        let sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
-        let movementTable = getBrilliantElement('table', ['movementContainer'], [
+        const _setRefs = [];
+        const sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
+        const movementTable = getBrilliantElement('table', ['movementContainer'], [
             getBrilliantElement('caption', [], getMovementSelect(movement.movementId, `${currentIteration}-${dayIndex}${movementIndex}`)),
             getBrilliantHeaderRow(['', 'Reps', 'Goal RPE', '% of e1RM', 'Weight', 'Actual RPE', 'e1RM']),
             ...sets.map((set, setIndex) => {
@@ -320,15 +324,21 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
                 const plannedRpe = getBrilliantDisabledInput(set.rpe(currentIteration));
                 const e1rm = getBrilliantDisabledInput('...');
                 if (set.perc(currentIteration) !== null) {
-                    let updateByHighestE1rm = () => {
-                            let highestE1rm = _setRefs.reduce((cMax, s) => Math.max(Number(cMax), Number(s.value)), 0);
-                            let percentage = (typeof set.perc === 'function') ? set.perc(currentIteration) : Number(set.perc);
+                    const updateByHighestE1rm = () => {
+                            const settingsMax = ProgramSettingsContainer.movementsMaxMap.get(movement.movementId) ?? 0;
+                            const highestE1rm = 
+                                _setRefs.reduce((cMax, s) => Math.max(Number(cMax), Number(s.value)), settingsMax);
+                            const percentage = (typeof set.perc === 'function') ? set.perc(currentIteration) : Number(set.perc);
                             weight.value = presentableWeightValue((percentage * highestE1rm)/100);
                     };
                     updateByHighestE1rm();
-                    _setRefs.map(setRef => setRef.addEventListener('change', updateByHighestE1rm))};
+                    _setRefs.map(setRef => setRef.addEventListener('change', updateByHighestE1rm))
+                    if (ProgramSettingsContainer.movementsMaxInputMap.has(movement.movementId)) {
+                        ProgramSettingsContainer.movementsMaxInputMap.get(movement.movementId).addEventListener('change', updateByHighestE1rm);
+                    }
+                };
                 _setRefs.push(e1rm);
-                let session1rm = () => (weight.value && reps.value && actualRpe.value) ? oneRepMax(Number(weight.value))(Number(reps.value))(Number(actualRpe.value)) : null;
+                const session1rm = () => (weight.value && reps.value && actualRpe.value) ? oneRepMax(Number(weight.value))(Number(reps.value))(Number(actualRpe.value)) : null;
                 e1rm.value = presentableWeightValue(session1rm());
                 [reps, weight, actualRpe].map(inputElement => inputElement.addEventListener('input', () => {
                     e1rm.value = presentableWeightValue(session1rm());
@@ -343,6 +353,59 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     })));
     return dayContainer;
 };
+
+class ProgramSettingsContainer {
+    static programSettingsContainer = getBrilliantElement('div', ['programSettingsContainer']);
+    static toggleVisibility = () => {
+        this.programSettingsContainer.hidden = !this.programSettingsContainer.hidden;
+    }
+    static movementsMaxMap = new Map();
+    static movementsTitleMap = new Map(movements.map(group => group.movements.map(mov => [mov.mid, mov.label])).flat());
+    static movementsMaxInputMap = new Map();
+    static initProgramSettingsContainer = programSetUp  => {
+        // whipe program maps
+        this.movementsMaxInputMap = new Map();
+        this.movementsMaxMap = new Map();
+        const settingsHeader = getBrilliantElement('h2', [], `Program settings`);
+        const programSettingsContainer = getBrilliantElement('div', ['programSettingsContainer']);
+        programSettingsContainer.id = 'programSettings';
+        programSettingsContainer.append(settingsHeader);
+        const cleanSlate = getBrilliantElement('a', ['clearlink'], '🗑');
+        cleanSlate.onclick = () => {
+            removeStoredInputKeys();
+            ProgramContainer.renderProgram();
+        };
+        programSettingsContainer.append("Reset program completely:", cleanSlate);
+        const movementsWithoutRPE = programSetUp.days.map(day => day
+            .filter(movement => movement.sets.reduce((previous, current) => !current.hasOwnProperty('rpe')), false)
+            .map(movement => movement.movementId))
+            .flat();
+        if (movementsWithoutRPE.length > 0) {
+            programSettingsContainer.append(
+                getBrilliantElement('table', ['settingsTable'], [
+                    getBrilliantHeaderRow([
+                    'Movment', 'e1RM'
+                    ]),
+                    ...movementsWithoutRPE.map(movementId => {
+                        const maxWeightInput = getBrilliantNumberInput(75, 1000, 2.5);
+                        maxWeightInput.addEventListener('change', () => {
+                            this.movementsMaxMap.set(movementId, maxWeightInput.value);
+                        })
+                        this.movementsMaxInputMap.set(movementId, maxWeightInput);
+                        maxWeightInput.dispatchEvent(new Event('change'));
+                        return getBrilliantRow([
+                            this.movementsTitleMap.get(movementId),
+                            maxWeightInput
+                        ]);
+                    })
+                ])
+            );
+        }
+        programSettingsContainer.hidden = true;
+
+        this.programSettingsContainer = programSettingsContainer;
+    }
+}
 
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
@@ -544,10 +607,9 @@ const standardPrograms = [
     },
     {
         title: "Oldschool linear",
-        shareString: "660101031121a3121W5112a-2+10181031121a3121W5112a-2+10121031121a3121W5112a-2+10191031121a3121W5112a-2+101b1031121a3121W5112a-2+101a1031121a3121W5112a-2+1"
+        shareString: "660101031112a-2+13112W45112a-2+10181031112a-2+13112W45112a-2+10121031112a-2+13112W45112a-2+10191031112a-2+13112W45112a-2+101b1031112a-2+13112W45112a-2+101a1031112a-2+13112W45112a-2+1"
     },
 ];
-
 
 class ProgramContainer {
     static appContainer = getBrilliantElement('div', ['appContainer']);
@@ -564,6 +626,7 @@ class ProgramContainer {
             }
             const actualProgram = event.detail.actualProgram;
             var iterations = [...Array(actualProgram.numberOfIterations).keys()];
+            ProgramSettingsContainer.initProgramSettingsContainer(actualProgram);
             programContainer.append(
                 ...iterations.map(currentIteration => {
                     let cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
