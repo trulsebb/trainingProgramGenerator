@@ -72,6 +72,9 @@
             .shareLinkContainer {
                 flex-basis: 100%;
                 margin-top: 0.5em;
+                display: flex;
+                flex-flow: column;
+                align-items: center;
             }
             .shareStringContainer {
                 margin: 0.5em;
@@ -217,7 +220,7 @@
                 font-size: x-small;
                 width: 15em;
             }
-            .dayEditContainer {
+            /* .dayEditContainer {
                 display: flex;
                 flex-direction: row;
                 justify-content: center;
@@ -234,6 +237,16 @@
             }
             .progressionBox {
                 border: 0.1em solid;
+            } */
+            .programEditorContainer {
+                flex-basis: 100%;
+                display: flex;
+                flex-direction: column;
+                width: fit-content;
+            }
+            .editorFieldBox {
+                display: flex;
+                justify-content: space-around;
             }
             .programSettingsContainer {
                 flex-basis: 100%;
@@ -244,6 +257,14 @@
                 margin-right: auto;
                 border: 0;
                 background-color: #fff5;
+            }
+            .cleanSlateContainer {
+                display: inline-block;
+                border: 0.2em dashed lightcoral;
+                padding: 0.5em;
+            }
+            [hidden]{
+                display:none;
             }
         </style>
         
@@ -256,6 +277,6 @@
                 navigator.serviceWorker.register("/serviceworker.js");
             }
         </script>
-        <script src="miniapp.js"></script>
+        <script src="app.js"></script>
     </body>
 </html> 
