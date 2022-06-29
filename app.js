@@ -263,8 +263,7 @@ const getBrilliantAnchorLinkList = programScheme => {
         programSettingsLink,
         shareLink, 
         ProgramSettingsContainer.programSettingsContainer, 
-        hiddenShareLinkContainer,
-        ProgramEditor.programEditorContainer
+        hiddenShareLinkContainer
     );
     
     return linkList;
@@ -468,7 +467,102 @@ class ProgramEditor {
                 numberOfDaysField
             ])
         );
-        console.log(rawProgram);
+
+        const renderParamBox = (params, nrOfParams) => {
+            const container = getBrilliantElement('div', ['paramsContainer']);
+            const filler = Array(nrOfParams).fill();
+            const paramInputs = filler.map((_, paramIndex) => {
+                const paramInput = getBrilliantElement('input', ['paramInput']);
+                paramInput.setAttribute('type', 'number');
+                paramInput.min = -1000;
+                paramInput.max = 1000;
+                paramInput.step = 0.25;
+                paramInput.value = params[paramIndex];
+                return getBrilliantElement('div', ['paramBox'], [
+                    getBrilliantElement('label', [], `Param ${paramIndex +1}`),
+                    paramInput
+                ]);
+            });
+            container.append(...paramInputs);
+            return container;
+        }
+
+        const progressionBoxes = new Map([
+            [PROGRESSION_LINEAR, {
+                optionLabel: "Linear",
+                nrOfParams: 2
+            }],
+            [PROGRESSION_CONSTANT, {
+                optionLabel: "Constant",
+                nrOfParams: 1
+            }],
+            [PROGRESSION_NONE, {
+                optionLabel: "None",
+                nrOfParams: 0
+            }],
+            [PROGRESSION_STEPS, {
+                optionLabel: "Steps",
+                nrOfParams: rawProgram.numberOfIterations
+            }],
+        ]);
+
+        const allDaysContainer = getBrilliantElement('div', ['allDaysContainer'], rawProgram.days.map((day, dayIndex) => 
+            getBrilliantElement('fieldset', ['dayContainer'], [
+                getBrilliantElement('legend', [], `Day ${dayIndex +1}`),
+                ...day.map(movement => {
+                    const movementCointainter = getBrilliantElement('div', []);
+                    const setContainers = movement.sets.map((set, setIndex) => 
+                        getBrilliantElement('div', ['setContainer'], [
+                            getBrilliantElement('span', [], `Set ${setIndex +1}`),
+                            ...Object.entries(set).map(([pKey, pVal]) => {
+                                const progressionContainer =  getBrilliantElement('div', ['progressionContainer']);
+                                const progressionSelect = getBrilliantElement('select', ['progressionSelect']);
+                                const progressionEditor = getBrilliantElement('div', ['progressionEditor']);
+                                progressionBoxes.forEach((pObj, pType) => {
+                                    const progressionOption = getBrilliantElement('option', [], pObj.optionLabel);
+                                    progressionOption.value = pType;
+                                    if (pType === pVal.type) {
+                                        progressionOption.selected = true;
+                                    }
+                                    progressionSelect.append(progressionOption);
+                                });
+                                progressionSelect.addEventListener('change', () => {
+                                    while (progressionEditor.firstChild) {
+                                        progressionEditor.removeChild(progressionEditor.firstChild);
+                                    }
+                                    const progressionType = Number(progressionSelect.value);
+                                    progressionEditor.append(
+                                        renderParamBox(
+                                            pVal.params, 
+                                            progressionBoxes.get(progressionType).nrOfParams
+                                        )
+                                    );
+                                    
+                                });
+                                progressionSelect.dispatchEvent(new Event('change'));
+                                progressionContainer.append(
+                                    getBrilliantElement('label', ['progressionLabel'], pKey),
+                                    progressionSelect,
+                                    progressionEditor
+                                );
+
+                                return progressionContainer;
+                            }),
+                            getBrilliantElement('button', [], 'Add set')
+                        ]) 
+                    );
+                    movementCointainter.append(
+                        getMovementSelect(movement.movementId),
+                        ...setContainers
+                    );
+                    return movementCointainter;
+                }),
+                getBrilliantElement('button', [], 'Add movement')
+            ])            
+        ));
+
+        programEditorContainer.append(allDaysContainer);
+
         const renderButton = getBrilliantElement('button', [], 'Render program');
         renderButton.onclick = () => {
             const shareString = getSharableProgram(rawProgram);
@@ -732,7 +826,7 @@ class ProgramContainer {
             );
         });
         headerContainer.dispatchEvent(new Event('render'));
-        this.appContainer.append(headerContainer, programContainer);
+        this.appContainer.append(headerContainer, ProgramEditor.programEditorContainer, programContainer);
         if (this.first) {
             document.body.append(this.appContainer);
             this.first = false;
