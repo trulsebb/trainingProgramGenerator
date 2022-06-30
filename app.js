@@ -307,7 +307,7 @@ const getMovementSelect = (defaultvalue, cascadeId) => {
 };
 
 const getDumbMovementSelect = (defaultvalue) => {
-    const selectElement = getBrilliantElement('select', ['movementselect']);
+    const selectElement = getBrilliantElement('select', ['dumbmovementselect']);
     const optGroups = movements.map(group => {
         const optGroup = getBrilliantElement('optgroup', [], group.movements.map(movement => {
             const moption = getBrilliantElement('option', [], movement.label);
@@ -444,7 +444,10 @@ class ProgramSettingsContainer {
         }
         const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
         hideSettingsButton.onclick = this.toggleVisibility;
-        programSettingsContainer.append(hideSettingsButton);
+        programSettingsContainer.append(
+            ProgramEditor.getProgramEditorButton(), 
+            hideSettingsButton
+        );
 
         this.programSettingsContainer = programSettingsContainer;
     }
@@ -456,7 +459,7 @@ class ProgramEditor {
         this.programEditorContainer.hidden = !this.programEditorContainer.hidden;
     }
     static getProgramEditorButton = () => {
-        const button = getBrilliantElement('button', [], 'Edit');
+        const button = getBrilliantElement('a', ['settingsLink'], 'Edit Program');
         button.onclick = this.toggleVisibility;
         return button;
     }
@@ -469,6 +472,8 @@ class ProgramEditor {
                 mutateObject[mutateProperty] = input.value;
             });
         }
+        const hideEditorButton = getBrilliantElement('a', ['settingsLink'], 'Close program editor');
+        hideEditorButton.onclick = this.toggleVisibility;
         const titleField = getBrilliantElement('input', []);
         titleField.setAttribute('type', 'text');
         setMutationInput(rawProgram, 'title', titleField);
@@ -477,14 +482,15 @@ class ProgramEditor {
         numberOfIterationsField.setAttribute('type', 'number');
         numberOfIterationsField.addEventListener('change', () => allDaysContainer.dispatchEvent(new Event('render')));
         setMutationInput(rawProgram, 'numberOfIterations', numberOfIterationsField);
-        const numberOfDaysField = getBrilliantElement('input', []);
-        numberOfDaysField.setAttribute('type', 'number');
-        numberOfDaysField.onchange = () => {
-            rawProgram.days = rawProgram.days.slice(0, numberOfDaysField.value);
-            allDaysContainer.dispatchEvent(new Event('render'));
-        };
-        numberOfDaysField.value = rawProgram.days.length;
+        // const numberOfDaysField = getBrilliantElement('input', []);
+        // numberOfDaysField.setAttribute('type', 'number');
+        // numberOfDaysField.onchange = () => {
+        //     rawProgram.days = rawProgram.days.slice(0, numberOfDaysField.value);
+        //     allDaysContainer.dispatchEvent(new Event('render'));
+        // };
+        // numberOfDaysField.value = rawProgram.days.length;
         programEditorContainer.append(
+            hideEditorButton,
             getBrilliantElement('div', ['editorFieldBox'], [
                 getBrilliantElement('label', [], 'Title'),
                 titleField
@@ -493,10 +499,10 @@ class ProgramEditor {
                 getBrilliantElement('label', [], 'Number of iterations/weeks'),
                 numberOfIterationsField
             ]),
-            getBrilliantElement('div', ['editorFieldBox'], [
-                getBrilliantElement('label', [], 'Number of days per week'),
-                numberOfDaysField
-            ])
+            // getBrilliantElement('div', ['editorFieldBox'], [
+            //     getBrilliantElement('label', [], 'Number of days per week'),
+            //     numberOfDaysField
+            // ])
         );
         const renderParamBox = (params, nrOfParams) => {
             const container = getBrilliantElement('div', ['paramsContainer']);
@@ -535,93 +541,179 @@ class ProgramEditor {
                 nrOfParams: rawProgram.numberOfIterations
             }],
         ]);
+        const getDeleteSetButton = (setContainer, movement, setIndex) => {
+            const button = getBrilliantElement('a', ['editorRemoveStuffButton'], '🗑');
+            button.onclick = () => {
+                setContainer.remove();
+                movement.sets.splice(setIndex, 1);
+            };
+            return button;
+        };
+        const getAddSetButton = (movement) => {
+            const button = getBrilliantElement('a', ['settingsLink'], 'Add set');
+            button.onclick = () => {
+                movement.sets.push({
+                    reps: {type: PROGRESSION_NONE, params: []},
+                    rpe: {type: PROGRESSION_NONE, params: []},
+                    perc: {type: PROGRESSION_NONE, params: []},
+                    weight: {type: PROGRESSION_NONE, params: []},
+                    repeat: {type: PROGRESSION_NONE, params: []}
+                });
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        };
+        const getDeleteMovementButton = (movementContainer, day, movementIndex) => {
+            const button = getBrilliantElement('a', ['editorRemoveStuffButton'], '🗑');
+            button.onclick = () => {
+                movementContainer.remove();
+                day.splice(movementIndex, 1);
+            };
+            return button;
+        };
+        const getAddMovementButton = (day) => {
+            const button = getBrilliantElement('a', ['settingsLink'], 'Add movement');
+            button.onclick = () => {
+                day.push({
+                    movementId: 0,
+                    sets: [{
+                        reps: {type: PROGRESSION_NONE, params: []},
+                        rpe: {type: PROGRESSION_NONE, params: []},
+                        perc: {type: PROGRESSION_NONE, params: []},
+                        weight: {type: PROGRESSION_NONE, params: []},
+                        repeat: {type: PROGRESSION_NONE, params: []}
+                    }]
+                });
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        }
+        const getDeleteDayButton = (dayContainer, program, dayIndex) => {
+            const button = getBrilliantElement('a', ['editorRemoveStuffButton'], '🗑');
+            button.onclick = () => {
+                dayContainer.remove();
+                program.days.splice(dayIndex, 1);
+            };
+            return button;
+        }
+        const getAddDayButton = (program) => {
+            const button = getBrilliantElement('a', ['settingsLink'], 'Add day');
+            button.onclick = () => {
+                program.days.push([{
+                    movementId: 0,
+                    sets: [{
+                        reps: {type: PROGRESSION_NONE, params: []},
+                        rpe: {type: PROGRESSION_NONE, params: []},
+                        perc: {type: PROGRESSION_NONE, params: []},
+                        weight: {type: PROGRESSION_NONE, params: []},
+                        repeat: {type: PROGRESSION_NONE, params: []}
+                    }]
+                }]);
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        }
         const allDaysContainer = getBrilliantElement('div', ['allDaysContainer']);
         allDaysContainer.addEventListener('render', event => {
             while (allDaysContainer.firstChild) {
                 allDaysContainer.removeChild(allDaysContainer.firstChild);
             }
-            console.log(rawProgram);
-            allDaysContainer.append(...rawProgram.days.map((day, dayIndex) => 
-                getBrilliantElement('fieldset', ['dayContainer'], [
-                    getBrilliantElement('legend', [], `Day ${dayIndex +1}`),
-                    ...day.map(movement => {
-                        const movementCointainter = getBrilliantElement('div', []);
-                        const setContainers = movement.sets.map((set, setIndex) => 
-                            getBrilliantElement('div', ['setContainer'], [
-                                getBrilliantElement('span', [], `Set ${setIndex +1}`),
-                                ...Object.entries(set).map(([pKey, pValue]) => {
-                                    const progressionContainer =  getBrilliantElement('div', ['progressionContainer']);
-                                    const progressionSelect = getBrilliantElement('select', ['progressionSelect']);
-                                    const progressionEditor = getBrilliantElement('div', ['progressionEditor']);
-                                    progressionBoxes.forEach((pObj, pType) => {
-                                        const progressionOption = getBrilliantElement('option', [], pObj.optionLabel);
-                                        progressionOption.value = pType;
-                                        if (pType === pValue.type) {
-                                            progressionOption.selected = true;
-                                        }
-                                        progressionSelect.append(progressionOption);
-                                    });
-                                    setMutationInput(pValue, 'type', progressionSelect);
-                                    progressionSelect.addEventListener('change', () => {
-                                        while (progressionEditor.firstChild) {
-                                            progressionEditor.removeChild(progressionEditor.firstChild);
-                                        }
-                                        progressionEditor.append(
-                                            renderParamBox(
-                                                pValue.params, 
-                                                progressionBoxes.get(Number(progressionSelect.value)).nrOfParams
-                                            )
+            allDaysContainer.append(
+                ...rawProgram.days.map((day, dayIndex) => {
+                    const dayContainer = getBrilliantElement('fieldset', ['dayEditContainer']);
+                    dayContainer.append(
+                        getBrilliantElement('legend', [], [`Day ${dayIndex +1}`, getDeleteDayButton(dayContainer, rawProgram, dayIndex)]),
+                        ...day.map((movement, movementIndex) => {
+                            const movementCointainter = getBrilliantElement('div', ['movementEditContainer']);
+                            const setContainers = movement.sets.map((set, setIndex) => {
+                                const setContainer = getBrilliantElement('div', ['setContainer']);
+                                setContainer.append(
+                                    getBrilliantElement('h3', [], `Set ${setIndex +1}`),
+                                    getDeleteSetButton(setContainer, movement, setIndex),
+                                    ...Object.entries(set).map(([pKey, pValue]) => {
+                                        const progressionContainer =  getBrilliantElement('div', ['progressionContainer']);
+                                        const progressionSelect = getBrilliantElement('select', ['progressionSelect']);
+                                        const progressionEditor = getBrilliantElement('div', ['progressionEditor']);
+                                        progressionBoxes.forEach((pObj, pType) => {
+                                            const progressionOption = getBrilliantElement('option', [], pObj.optionLabel);
+                                            progressionOption.value = pType;
+                                            if (pType === pValue.type) {
+                                                progressionOption.selected = true;
+                                            }
+                                            progressionSelect.append(progressionOption);
+                                        });
+                                        setMutationInput(pValue, 'type', progressionSelect);
+                                        progressionSelect.addEventListener('change', () => {
+                                            while (progressionEditor.firstChild) {
+                                                progressionEditor.removeChild(progressionEditor.firstChild);
+                                            }
+                                            progressionEditor.append(
+                                                renderParamBox(
+                                                    pValue.params, 
+                                                    progressionBoxes.get(Number(progressionSelect.value)).nrOfParams
+                                                )
+                                            );
+                                        });
+                                        progressionSelect.dispatchEvent(new Event('change'));
+                                        progressionContainer.append(
+                                            getBrilliantElement('label', ['progressionLabel'], pKey),
+                                            progressionSelect,
+                                            progressionEditor
                                         );
-                                        
-                                    });
-                                    progressionSelect.dispatchEvent(new Event('change'));
-                                    progressionContainer.append(
-                                        getBrilliantElement('label', ['progressionLabel'], pKey),
-                                        progressionSelect,
-                                        progressionEditor
-                                    );
-
-                                    return progressionContainer;
-                                })
-                            ]) 
-                        );
-                        const movementSelect = getDumbMovementSelect(movement.movementId);
-                        setMutationInput(movement, 'movementId', movementSelect);
-                        movementCointainter.append(
-                            movementSelect,
-                            ...setContainers,
-                            getBrilliantElement('button', [], 'Add set')
-                        );
-                        return movementCointainter;
-                    }),
-                    getBrilliantElement('button', [], 'Add movement')
-                ])
-            ))
+                                        return progressionContainer;
+                                    })
+                                );
+                                return setContainer;
+                            });
+                            const movementSelect = getDumbMovementSelect(movement.movementId);
+                            setMutationInput(movement, 'movementId', movementSelect);
+                            movementCointainter.append(
+                                getBrilliantElement('h3', [], `Movement ${movementIndex +1}`),
+                                getDeleteMovementButton(movementCointainter, day, movementIndex),
+                                movementSelect,
+                                ...setContainers,
+                                getAddSetButton(movement)
+                            );
+                            return movementCointainter;
+                        }),
+                        getAddMovementButton(day)
+                    );
+                    return dayContainer; 
+                }),
+                getAddDayButton(rawProgram)
+            )
         });
         allDaysContainer.dispatchEvent(new Event('render'));
 
         programEditorContainer.append(allDaysContainer);
 
-        const renderButton = getBrilliantElement('button', [], 'Render program');
+        const renderButton = getBrilliantElement('a', ['settingsLink'], 'Render program');
         renderButton.onclick = () => {
             const shareString = getSharableProgram(rawProgram);
+            console.log(shareString);
             ProgramContainer.renderProgram({title: rawProgram.title, shareString: shareString});
         }
         programEditorContainer.append(renderButton);
+        programEditorContainer.hidden = (shareString == "10") ? false : true;
         this.programEditorContainer = programEditorContainer;
     }
 }
 
-const getProgramSelect = (programSchemes) => {
+const NEW_PROGRAM_ID = 1337;
+
+const getProgramSelect = (programSchemes, isNewProgram) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
     selectElement.id = 9999; //'9-9-9-9-9';
     const selectedvalue = getSetting(selectElement.id)(0);
     selectElement.onchange = () => {
         autosave();
         removeStoredInputKeys();
-        saveSetting(selectElement.id)(selectElement.value);
-        ProgramContainer.renderProgram();
-        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
+        if (selectElement.value == NEW_PROGRAM_ID) {
+            ProgramContainer.renderProgram({title: "New program", shareString: "10"});
+        } else {
+            saveSetting(selectElement.id)(selectElement.value);
+            ProgramContainer.renderProgram();
+        }
     };
     selectElement.append(...programSchemes.map((programScheme, index) => {
         const option = getBrilliantElement('option', [], programScheme.title);
@@ -631,6 +723,12 @@ const getProgramSelect = (programSchemes) => {
             }
             return option;
     }));
+    const newProgramOption = getBrilliantElement('option', [], 'Create new program');
+    newProgramOption.value = NEW_PROGRAM_ID;
+    if (isNewProgram) {
+        newProgramOption.selected = true;
+    }
+    selectElement.append(newProgramOption);
     return selectElement;
 }
 
@@ -839,6 +937,7 @@ class ProgramContainer {
         while (this.appContainer.firstChild) {
             this.appContainer.removeChild(this.appContainer.firstChild);
         }
+        window.scrollTo({top: 0});
         const programContainer = getBrilliantElement('div', ['programContainer']);
         programContainer.addEventListener('render', event => {
             while (programContainer.firstChild) {
@@ -861,8 +960,10 @@ class ProgramContainer {
         });
         
         let rawProgramSetUp = standardPrograms[getSetting('9999')(0)];
+        let isNewProgram = false;
         if (typeof sharedProgramSetUp === 'object') {
             rawProgramSetUp = sharedProgramSetUp;
+            isNewProgram = true;
         }
         const rawProg = parseSharableProgram(rawProgramSetUp.title, rawProgramSetUp.shareString);
         const programSetUp = readyProgram(rawProg);
@@ -874,8 +975,7 @@ class ProgramContainer {
                 headerContainer.removeChild(headerContainer.firstChild);
             }
             headerContainer.append(
-                getProgramSelect(standardPrograms),
-                ProgramEditor.getProgramEditorButton(),
+                getProgramSelect(standardPrograms, isNewProgram),
                 getBrilliantAnchorLinkList(programSetUp)
             );
         });

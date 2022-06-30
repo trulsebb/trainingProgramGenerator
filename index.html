@@ -48,6 +48,7 @@
                 margin: 0.3em;
                 padding: 0.01em 0.2em;
                 filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+                height: fit-content;
             }
             .sharelink {
                 background: white;
@@ -226,9 +227,6 @@
                 justify-content: center;
                 flex-wrap: wrap;
             }
-            .progressionEditor {
-                display: flex;
-            }
             .progressionRadioListContainer {
                 display: flex;
                 flex-direction: row;
@@ -242,11 +240,13 @@
                 flex-basis: 100%;
                 display: flex;
                 flex-direction: column;
-                width: fit-content;
+                /* width: fit-content; */
             }
             .editorFieldBox {
                 display: flex;
-                justify-content: space-around;
+                justify-content: space-between;
+                padding: 0 1em;
+                max-width: 30em;
             }
             .programSettingsContainer {
                 flex-basis: 100%;
@@ -265,9 +265,94 @@
             }
             .progressionContainer {
                 display: flex;
+                justify-content: space-between;
+                flex-basis: 100%;
+                border-bottom: 0.2em dotted gray;
+                margin: 0.2em;
+            }
+            .allDaysContainer {
+                display: flex;
+                flex-wrap: wrap;
+                flex-direction: column;
+                align-content: flex-start;
+            }
+            .dayEditContainer {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+                border: 0;
+                border-radius: 0.5em;
+                padding: 0 0 0 0;
+                margin-bottom: 1em;
+            }
+            .dayEditContainer:nth-child(even) {
+                background-image: linear-gradient(
+                    135deg, #fdfb7650 25%, transparent 25%, 
+                    transparent 50%, #fdfb7650 50%, #fdfb7650 75%, 
+                    transparent 75%, transparent 100%);
+                background-size: 1em 1em;
+            }
+            .dayEditContainer:nth-child(odd) {
+                background-image: linear-gradient(
+                    135deg, #EE617D20 25%, transparent 25%, 
+                    transparent 50%, #EE617D20 50%, #EE617D20 75%, 
+                    transparent 75%, transparent 100%);
+                background-size: 1em 1em;
+            }
+            .setContainer {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 0.5em;
+            }
+            .setContainer:nth-child(odd) {
+                background: #8eee6120;
+            }
+            .setContainer:nth-child(even) {
+                background: #6ce3e77a;
+            }
+            .movementEditContainer {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                background-color: #0000000d;
+                padding: 1em;
+                margin: 0.5em;
+                max-width: 30em;
+                height: fit-content;
+            }
+            .editorRemoveStuffButton {
+                background: lightpink;
+                color: black;
+                text-align: center;
+                text-decoration: none;
+                font-size: large;
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+                height: fit-content;
+                margin: 0.3em;
+            }
+            .progressionLabel {
+                flex-basis: 20%;
+            }
+            .progressionSelect {
+                height: fit-content;
+                flex-basis: 20%;
+            }
+            .progressionEditor {
+                display: flex;
+                flex-basis: 40%;
+            }
+            .dumbmovementselect {
+                flex-basis: 100%;
+                height: fit-content;
             }
             [hidden]{
                 display:none;
+            }
+            h3 {
+                width: fit-content;
+                margin: 0.3em;
             }
         </style>
         
