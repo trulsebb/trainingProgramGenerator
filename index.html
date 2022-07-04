@@ -8,114 +8,6 @@
         <title>Powerlifting training program app</title>
         <link rel="apple-touch-icon" href="/icons/apple192.png">
         <style>
-            .headerContainer {
-                top: 0;
-                z-index: 10;
-                margin: 0;
-                padding: 0;
-                position: sticky; top: 0;
-                background: linear-gradient(to right, #6ce3e7, #a0b0f8);
-                border-radius: 0.5em;
-            }
-            .stickylinks {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .cyclelink {
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                margin: 0.3em;
-                padding: 0.2em;
-            }
-            .cyclelink:nth-child(even) {
-                background: #89aee1c0;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .cyclelink:nth-child(odd) {
-                background: #9effb8c0;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .settingsLink {
-                background: white;
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                font-size: large;
-                margin: 0.3em;
-                padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-                height: fit-content;
-            }
-            .sharelink {
-                background: white;
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                font-size: large;
-                margin: 0.3em;
-                padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .clearlink {
-                background: lightpink;
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                font-size: large;
-                margin: 0.3em;
-                padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .shareLinkContainer {
-                flex-basis: 100%;
-                margin-top: 0.5em;
-                display: flex;
-                flex-flow: column;
-                align-items: center;
-            }
-            .shareStringContainer {
-                margin: 0.5em;
-                border: 0.2em dotted aliceblue;
-                padding-bottom: 0.3em;
-            }
-            .presentedlink {
-                width: 15em;
-                margin: 0.3em;
-                padding: 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .movementselect {
-                appearance: none;
-                -webkit-appearance: none;
-                border: none;
-                text-align-last:center;
-                font-size: large;
-                background-color: transparent;
-                font-family: monospace;
-            }
-            input[type=number] {
-                max-width: 4.5em;
-                padding: 0;
-                margin: 0;
-                border: 1px solid #eee;
-                background-color: #fffa;
-                text-align: right;
-                font-family: monospace;
-            }
-            input[type=text]:disabled {
-                width: 3em;
-                padding: 0;
-                margin: 0;
-                border: 1px solid #eee0;
-                font-family: monospace;
-                background-color: #fff0;
-                color: black;
-                text-align: center;
-            }
             body {
                 margin: 0;
                 font-family: monospace;
@@ -143,7 +35,66 @@
                 padding: 0;
                 margin: 0;
             }
-            .programselect {
+            legend {
+                width: auto;
+                margin-left: auto;
+                margin-right: auto;
+                font-size: medium;
+                padding: 0.1em 0.5em;
+                background-color: #ffffff80;
+                border-radius: 0.5em;
+            }
+            input[type=number] {
+                max-width: 4.5em;
+                padding: 0;
+                margin: 0;
+                border: 1px solid #eee;
+                background-color: #fffa;
+                text-align: right;
+                font-family: monospace;
+            }
+            input[type=text]:disabled {
+                width: 3em;
+                padding: 0;
+                margin: 0;
+                border: 1px solid #eee0;
+                font-family: monospace;
+                background-color: #fff0;
+                color: black;
+                text-align: center;
+            }
+            button {
+                border: 0;
+                /* background-color: transparent; */
+                background: white;
+                color: black;
+                text-align: center;
+                text-decoration: none;
+                font-size: inherit;
+                margin: 0.3em;
+                padding: 0.01em 0.2em;
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+                max-width: 15em;
+            }
+            h3 {
+                width: fit-content;
+                margin: 0.3em;
+            }
+            .headerContainer {
+                top: 0;
+                z-index: 10;
+                margin: 0;
+                padding: 0;
+                position: sticky; top: 0;
+                background: linear-gradient(to right, #6ce3e7, #a0b0f8);
+                border-radius: 0.5em;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .programHeader {
+                /* flex-basis: 80%; */
+                margin: 0;
                 appearance: none;
                 -webkit-appearance: none;
                 border: none;
@@ -153,8 +104,60 @@
                 color: black;
                 filter: drop-shadow(0.15em 0.15em 0em #d46ce7d0);
                 display: inline-block;
-                margin: 0;
                 font-size: xx-large;
+                max-width: 15em;
+            }
+            .programselect {
+                /* flex-basis: 20%; */
+                appearance: none;
+                -webkit-appearance: none;
+                border: none;
+                text-align-last:center;
+                background-color: white;
+                font-family: monospace;
+                filter: drop-shadow(0.15em 0.15em 0em #d46ce7d0);
+                margin: 0.1em;
+                font-size: xx-large;
+                width: 1em;
+                padding: 0;
+                line-height: 1em;
+            }
+            .linkList {
+                flex-basis: 100%;
+            }
+            .cyclelink {
+                color: black;
+                text-align: center;
+                text-decoration: none;
+                margin: 0.3em;
+                padding: 0.2em;
+            }
+            .shareLinkContainer {
+                flex-basis: 100%;
+                margin-top: 0.5em;
+                display: flex;
+                flex-flow: column;
+                align-items: center;
+            }
+            .shareStringContainer {
+                margin: 0.5em;
+                border: 0.2em dotted aliceblue;
+                padding-bottom: 0.3em;
+            }
+            .presentedlink {
+                width: 15em;
+                margin: 0.3em;
+                padding: 0.2em;
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+            }
+            .movementselect {
+                appearance: none;
+                -webkit-appearance: none;
+                border: none;
+                text-align-last:center;
+                font-size: large;
+                background-color: transparent;
+                font-family: monospace;
             }
             .e1rm {
                 width: 4em;
@@ -184,30 +187,19 @@
                 background: #0000000d;
                 filter: drop-shadow(0.2em 0.2em 0em #00000010);
             }
-            legend {
-                width: auto;
-                margin-left: auto;
-                margin-right: auto;
-                font-size: medium;
-                padding: 0.1em 0.5em;
-                background-color: #ffffff80;
-                border-radius: 0.5em;
-            }
             .movementContainer {
                 padding: 0 0.3em 0.3em 0.3em;
             }
             .sessionContainer {
                 padding: 0 1em 1em 1em;
             }
-            .blockContainer:nth-child(even) {
+            .weekelement:nth-child(even) {
                 background: #89aee1d0;
-                color: black;
-                filter: drop-shadow(0.5em 0.5em 0em #d46ce7d0);
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
             }
-            .blockContainer:nth-child(odd) {
+            .weekelement:nth-child(odd) {
                 background: #9effb8d0;
-                color: black;
-                filter: drop-shadow(0.5em 0.5em 0em #d46ce7d0);
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
             }
             .blockContainer {
                 padding: 0.5em;
@@ -221,26 +213,11 @@
                 font-size: x-small;
                 width: 15em;
             }
-            /* .dayEditContainer {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            .progressionRadioListContainer {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            .progressionBox {
-                border: 0.1em solid;
-            } */
             .programEditorContainer {
                 flex-basis: 100%;
                 display: flex;
                 flex-direction: column;
-                /* width: fit-content; */
+                align-items: center;
             }
             .editorFieldBox {
                 display: flex;
@@ -347,12 +324,13 @@
                 flex-basis: 100%;
                 height: fit-content;
             }
+            
+            
+            .clearButton {
+                background-color: lightpink;
+            }
             [hidden]{
                 display:none;
-            }
-            h3 {
-                width: fit-content;
-                margin: 0.3em;
             }
         </style>
         
