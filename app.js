@@ -50,6 +50,25 @@ const movements = [
     }
 ];
 
+const standardPrograms = [
+    {
+        title: "Basic training program",
+        shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04w8084448k-2+48484A0c4448s-2+4c448-23Wkk484g0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04A8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04E8084448k-2+48484A0c4448s-2+4c448-23Wkk484g"
+    },
+    {
+        title: "Swiss program",
+        shareString: "kk0808084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21i8084448w-2+48484w0c4448E-2+4c448-23Wkk484g08k8084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21m8084448k-2+48484A0c4448s-2+4c448-23Wkk484g08I8084448k-2+48484A0c4448s-2+4c448-23Wkk484gs8084448w-2+48484w0c4448E-2+4c448-23Wkk484g08-21u8084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21q8084448k-2+48484w0c4448s-2+4c448-23Wkk484g08-21C8084448w-2+48484w0c4448E-2+4c448-23Wkk484g-21u8084448w-2+48484w0c4448E-2+4c448-23Wkk484g"
+    },
+    {
+        title: "Oldschool linear",
+        shareString: "oo04040c4448E-2+4c448-23Kgk448E-2+404w40c4448E-2+4c448-23Kgk448E-2+404840c4448E-2+4c448-23Kgk448E-2+404A40c4448E-2+4c448-23Kgk448E-2+404I40c4448E-2+4c448-23Kgk448E-2+404E40c4448E-2+4c448-23Kgk448E-2+4"
+    },
+    {
+        title: "Advanzed program",
+        shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04wk088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ak088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ek088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S"
+    }
+];
+
 const maxFormula = (weight, reps) => weight * (36 / (37 - reps));
 const rpeBasedMax = wantedReps => weight => reps => rpe => maxFormula(weight, (reps + (11 - rpe - wantedReps)));
 const oneRepMax = rpeBasedMax(1);
@@ -65,7 +84,7 @@ const decToB62 = decValue => {
     }
     let newValue = '';
     const appendThis = (decValue < 0) ? '+' : '';
-    let absDecValue = Math.abs(decValue);
+    let absDecValue = (Math.abs(decValue) * 4).toFixed();
     while (absDecValue > 0) {
         newValue = b62Chars[absDecValue % 62] + newValue;
         absDecValue = (absDecValue - (absDecValue % 62)) / 62;
@@ -75,7 +94,7 @@ const decToB62 = decValue => {
 const b62ToDec = b62Value => {
     const isNegative = (b62Value[0] === '+');
     const absB62Value = (b62Value[0] === '+') ? b62Value.slice(1) : b62Value;
-    const decValue = absB62Value.split('').map(c => b62Chars.findIndex(s => s == c)).reverse().map((v, i) => v*62**i).reduce((acc, val) => acc + val);
+    const decValue = (absB62Value.split('').map(c => b62Chars.findIndex(s => s == c)).reverse().map((v, i) => v*62**i).reduce((acc, val) => acc + val)) / 4;
     return (isNegative) ? decValue * -1 : decValue;
 };
 
@@ -92,11 +111,11 @@ class IdCreator {
 const getStoredKeys = () => [...Array(localStorage.length).keys()].map(i => localStorage.key(i));
 
 const getB62FromKeyVal = (key, value) => {
-    return decToB62([key, value * 4].join(''));
+    return decToB62([key, value].join(''));
 };
 
 const removeStoredInputKeys = () => getStoredKeys()
-    .filter(skey => skey.match(/^(?!9999)\d{4}$/g))
+    .filter(skey => skey.match(/^\d{4}$/g))
     .map(k => { localStorage.removeItem(k)});
 
 const getShareString = () => getStoredKeys()
@@ -108,24 +127,22 @@ const getKeyValFromB62 = b62 => {
     const decimalStr = b62ToDec(b62).toString(10);
     const key = decimalStr.slice(0,4);
     const value = decimalStr.slice(4);
-    return [key, value/4];
+    return [key, value];
 };
 
 const parseShareString = shareString => shareString.split('-').map(b62 => getKeyValFromB62(b62));
 
-const autosave = () => {
+const autosaveProgress = () => {
     const dateString = new Date().toISOString().slice(0,10);
-    const programSelect = document.getElementById('9999');
     const previousSetting = getSetting('9999')(0);
-    const serializedKey = programSelect.options[previousSetting].text;
     const stringToSave = getShareString();
     if (stringToSave.split('-').length > 1) {
-        localStorage.setItem(`${serializedKey} ${dateString}`, getShareString());
+        localStorage.setItem(`progress-${previousSetting}-${dateString}`, getShareString());
     }
-}
+};
 
 const importFromShareString = (shareString) => {
-    autosave();
+    autosaveProgress();
     removeStoredInputKeys();
     parseShareString(shareString).map(row => saveSetting(row[0])(row[1]));
 };
@@ -138,10 +155,25 @@ const getSetting = elementId => defaultValue => {
     return localStorage.getItem(elementId);
 };
 
+const saveProgram = (programName, shareString) => {
+    localStorage.setItem(`program-${programName}`, shareString);
+};
+
+const getSavedPrograms = () => {
+    const programList = getStoredKeys()
+        .filter(skey => skey.match(/^program-/g))
+        .map(k => ({
+            title: k.substring('program-'.length),
+            shareString: localStorage.getItem(k)
+        }));
+    return programList;
+}
+
+const getAllAvaliablePrograms = () =>  [...standardPrograms, ...getSavedPrograms()];
 
 // ui
 const getBrilliantElement = (type, classes, content) => {
-    let element = document.createElement(type);
+    const element = document.createElement(type);
     element.classList.add(...classes);
     if (typeof content === 'string') {
         element.textContent = content;
@@ -157,7 +189,7 @@ const getBrilliantRow = headerCellsContent => getBrilliantElement('tr', [], head
 const getBrilliantHeaderRow = headerCellsContent => getBrilliantElement('tr', [], headerCellsContent.map(content => getBrilliantElement('th', [], content)));
 
 const getBrilliantCheckBox = () => {
-    let element = document.createElement('input');
+    const element = document.createElement('input');
     element.id = IdCreator.getUniqueId();
     element.onchange = () => saveSetting(element.id)(element.checked ? 1 : 0);
     element.setAttribute('type', 'checkBox');
@@ -166,7 +198,7 @@ const getBrilliantCheckBox = () => {
 }
 
 const getBrilliantNumberInput = (min, max, step, value) => {
-    let element = document.createElement('input');
+    const element = document.createElement('input');
     if (max < 100 && step == 1) {
         element.classList.add('smallInput');
     }
@@ -181,7 +213,7 @@ const getBrilliantNumberInput = (min, max, step, value) => {
 };
 
 const getBrilliantDisabledInput = (value) => {
-    let element = document.createElement('input');
+    const element = document.createElement('input');
     element.setAttribute('type', 'text');
     element.value = value;
     element.disabled = true;
@@ -200,21 +232,21 @@ const getShareContainer = () => {
                 .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}$/g))
                 .sort()
                 .map(k => {
-                    let shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
-                    const removeButton = getBrilliantElement('a', ['clearlink'], '🗑');
+                    const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
+                    const removeButton = getBrilliantElement('button', ['clearButton'], '🗑');
                     removeButton.onclick = () => {
                         localStorage.removeItem(k);
                         hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
                     };
-                    let textBoxWithString = getBrilliantElement('input', ['presentedlink'], '');
+                    const textBoxWithString = getBrilliantElement('input', ['presentedlink'], '');
                     textBoxWithString.type = 'text';
                     textBoxWithString.value = localStorage.getItem(k);
-                    const copyLinkButton = getBrilliantElement('a', ['sharelink'], 'Copy');
+                    const copyLinkButton = getBrilliantElement('button', [], 'Copy');
                     copyLinkButton.onclick = () => {
                         textBoxWithString.select();
                         document.execCommand("copy");
                     };
-                    const restoreButton = getBrilliantElement('a', ['sharelink'], 'Restore');
+                    const restoreButton = getBrilliantElement('button', [], 'Restore');
                     restoreButton.onclick = () => {
                         importFromShareString(textBoxWithString.value);
                         ProgramContainer.renderProgram();
@@ -225,10 +257,10 @@ const getShareContainer = () => {
                 }
             )
         );
-        let shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
-        const saveSerializedButton = getBrilliantElement('a', ['sharelink'], 'Save current');
+        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
+        const saveSerializedButton = getBrilliantElement('button', [], 'Save current');
         saveSerializedButton.onclick = () => {
-            autosave();
+            autosaveProgress();
             hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
         }
         const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
@@ -241,17 +273,17 @@ const getShareContainer = () => {
 
 const getBrilliantAnchorLinkList = programScheme => {
     const iterations = [...Array(programScheme.numberOfIterations).keys()];
-    const linkList = getBrilliantElement('div', ['stickylinks']);
-    const programSettingsLink = getBrilliantElement('a', ['settingsLink'], '🛠');
+    const linkList = getBrilliantElement('div', ['linkList']);
+    const programSettingsLink = getBrilliantElement('button', [], '🛠');
     programSettingsLink.onclick = () => {
         ProgramSettingsContainer.toggleVisibility();
     }
     const weekLinks = iterations.map(iteration => {
-        const link = getBrilliantElement('a', ['cyclelink'], `Week ${iteration + 1}`);
+        const link = getBrilliantElement('a', ['cyclelink', 'weekelement'], `Week${iteration + 1}`);
         link.href = `#cycle${iteration}`;
         return link;
     });
-    const shareLink = getBrilliantElement('a', ['sharelink'], '💾');
+    const shareLink = getBrilliantElement('button', [], '💾');
     const hiddenShareLinkContainer = getShareContainer();
     shareLink.onclick = () => {
         hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
@@ -306,8 +338,27 @@ const getMovementSelect = (defaultvalue, cascadeId) => {
     return selectElement;
 };
 
+const getDumbMovementSelect = (defaultvalue) => {
+    const selectElement = getBrilliantElement('select', ['dumbmovementselect']);
+    const optGroups = movements.map(group => {
+        const optGroup = getBrilliantElement('optgroup', [], group.movements.map(movement => {
+            const moption = getBrilliantElement('option', [], movement.label);
+            moption.value = movement.mid;
+            if (movement.mid == defaultvalue) {
+                moption.selected = true;
+            }
+            return moption;
+        }));
+        optGroup.label = group.group;
+        return optGroup;
+    });
+    selectElement.append(...optGroups);
+    return selectElement;
+};
+
 const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     const dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
+    dayContainer.id = `${currentIteration}-${dayIndex}`;
     dayContainer.append(...movements.map(((movement, movementIndex) => {
         const _setRefs = [];
         const sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
@@ -320,9 +371,7 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
                 const weight = (set.perc(currentIteration) !== null) 
                     ? getBrilliantDisabledInput(set.weight(currentIteration)) 
                     : getBrilliantNumberInput(75, 1000, 2.5, set.weight(currentIteration));
-                const actualRpe = (set.rpe(currentIteration) == null)
-                    ? getBrilliantDisabledInput(set.rpe(currentIteration))
-                    : getBrilliantNumberInput(5, 11, 0.25, set.rpe(currentIteration));
+                const actualRpe = getBrilliantNumberInput(1, 11, 0.25, set.rpe(currentIteration));
                 const plannedRpe = getBrilliantDisabledInput(set.rpe(currentIteration));
                 const e1rm = getBrilliantDisabledInput('...');
                 if (set.perc(currentIteration) !== null) {
@@ -356,6 +405,16 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     return dayContainer;
 };
 
+const getBrilliantDateInput = (value) => {
+    const element = document.createElement('input');
+    element.id = IdCreator.getUniqueId();
+    element.onchange = () => saveSetting(element.id)(element.valueAsNumber/100000);
+    element.setAttribute('type', 'date');
+    const useValue = getSetting(element.id)(value)*100000;
+    if (useValue) element.valueAsNumber = useValue;
+    return element;
+}
+
 class ProgramSettingsContainer {
     static programSettingsContainer = getBrilliantElement('div', ['programSettingsContainer']);
     static toggleVisibility = () => {
@@ -372,66 +431,342 @@ class ProgramSettingsContainer {
         const programSettingsContainer = getBrilliantElement('div', ['programSettingsContainer']);
         programSettingsContainer.id = 'programSettings';
         programSettingsContainer.append(settingsHeader);
-        const cleanSlate = getBrilliantElement('a', ['clearlink'], '🗑');
+        // Clean button
+        const cleanSlate = getBrilliantElement('button', ['clearButton'], '🗑');
         cleanSlate.onclick = () => {
             removeStoredInputKeys();
             ProgramContainer.renderProgram();
         };
-        programSettingsContainer.append("Reset program completely:", cleanSlate);
-        const movementsWithoutRPE = programSetUp.days.map(day => day
-            .filter(movement => movement.sets.reduce((previous, current) => !current.hasOwnProperty('rpe')), false)
+        programSettingsContainer.append(getBrilliantElement('div', ['cleanSlateContainer'], ["Reset program:", cleanSlate]));
+        // Start date input
+
+        // Movement Maxes
+        const movementsOptionalMax = programSetUp.days.map(day => day
+            .filter(movement => movement.sets.some(set => set.rpe(1) !== null && set.reps(1) !== null))
             .map(movement => movement.movementId))
             .flat();
-        if (movementsWithoutRPE.length > 0) {
-            programSettingsContainer.append(
-                getBrilliantElement('table', ['settingsTable'], [
+        const movementsWithRequiredMax = programSetUp.days.map(day => day
+            .filter(movement => movement.sets.every(set => set.rpe(1) === null || set.reps(1) === null))
+            .map(movement => movement.movementId))
+            .flat();
+        
+        programSettingsContainer.append(...[{title: "Required e1RMs", movs: movementsWithRequiredMax}, {title: "Optional e1RMs", movs:movementsOptionalMax}].map(movementList => 
+            (movementList.movs.length > 0) 
+                ? getBrilliantElement('table', ['settingsTable'], [
+                    getBrilliantElement('caption', [], `${movementList.title}:`),
                     getBrilliantHeaderRow([
                     'Movment', 'e1RM'
                     ]),
-                    ...movementsWithoutRPE.map(movementId => {
+                    ...movementList.movs.map(movementId => {
                         const maxWeightInput = getBrilliantNumberInput(75, 1000, 2.5);
                         maxWeightInput.addEventListener('change', () => {
                             this.movementsMaxMap.set(movementId, maxWeightInput.value);
                         })
                         this.movementsMaxInputMap.set(movementId, maxWeightInput);
-                        maxWeightInput.dispatchEvent(new Event('change'));
+                        this.movementsMaxMap.set(movementId, maxWeightInput.value);
                         return getBrilliantRow([
                             this.movementsTitleMap.get(movementId),
                             maxWeightInput
                         ]);
                     })
                 ])
-            );
-        }
-        if ([...this.movementsMaxInputMap.values()].every(maxInput => maxInput.value > 0)) {
+                : null
+        ).filter(element => element !== null));
+        if (movementsWithRequiredMax.length == 0 
+            || [...this.movementsMaxInputMap.keys()]
+                .filter(maxKey => movementsWithRequiredMax.includes(maxKey))
+                .every(maxKey => this.movementsMaxInputMap.get(maxKey).value > 0)) {
             programSettingsContainer.hidden = true;
         }
         const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
         hideSettingsButton.onclick = this.toggleVisibility;
-        programSettingsContainer.append(hideSettingsButton);
+        programSettingsContainer.append(
+            ProgramEditor.getProgramEditorButton(), 
+            ProgramEditor.getNewProgramButton(),
+            hideSettingsButton
+        );
 
         this.programSettingsContainer = programSettingsContainer;
     }
 }
 
+class ProgramEditor {
+    static programEditorContainer = null;
+    static toggleVisibility = () => {
+        this.programEditorContainer.hidden = !this.programEditorContainer.hidden;
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+    static getNewProgramButton = () => {
+        const button = getBrilliantElement('button', [], 'Create new program');
+        button.onclick = () => {
+            autosaveProgress();
+            removeStoredInputKeys();
+            ProgramContainer.renderProgram({title: "New program", shareString: "k0"});
+        };
+        return button;
+    }
+    static getProgramEditorButton = () => {
+        const button = getBrilliantElement('button', [], 'Edit Program');
+        button.onclick = this.toggleVisibility;
+        return button;
+    }
+    static initProgramEditorContainer = (title, shareString)  => {
+        const rawProgram = fillSetParams(parseSharableProgram(title, shareString));
+        const programEditorContainer = getBrilliantElement('div', ['programEditorContainer']);
+        const setMutationInput = (mutateObject, mutateProperty, input) => {
+            input.value = (input.type === 'text') ? mutateObject[mutateProperty] : Number(mutateObject[mutateProperty]);
+            input.addEventListener('change', () => {
+                mutateObject[mutateProperty] = input.value;
+            });
+        }
+        const hideEditorButton = getBrilliantElement('button', [], 'Close program editor');
+        hideEditorButton.onclick = this.toggleVisibility;
+        const titleField = getBrilliantElement('input', []);
+        titleField.setAttribute('type', 'text');
+        setMutationInput(rawProgram, 'title', titleField);
+        titleField.value = rawProgram.title;
+        const numberOfIterationsField = getBrilliantElement('input', []);
+        numberOfIterationsField.setAttribute('type', 'number');
+        numberOfIterationsField.addEventListener('change', () => allDaysContainer.dispatchEvent(new Event('render')));
+        setMutationInput(rawProgram, 'numberOfIterations', numberOfIterationsField);
+        programEditorContainer.append(
+            hideEditorButton,
+            getBrilliantElement('div', ['editorFieldBox'], [
+                getBrilliantElement('label', [], 'Title'),
+                titleField
+            ]),
+            getBrilliantElement('div', ['editorFieldBox'], [
+                getBrilliantElement('label', [], 'Number of iterations/weeks'),
+                numberOfIterationsField
+            ]),
+        );
+        const renderParamBox = (params, nrOfParams) => {
+            const container = getBrilliantElement('div', ['paramsContainer']);
+            const filler = Array(nrOfParams).fill();
+            const paramInputs = filler.map((_, paramIndex) => {
+                const paramInput = getBrilliantElement('input', ['paramInput']);
+                paramInput.setAttribute('type', 'number');
+                paramInput.min = -1000;
+                paramInput.max = 1000;
+                paramInput.step = 0.25;
+                setMutationInput(params, paramIndex, paramInput);
+                // paramInput.value = params[paramIndex];
+                return getBrilliantElement('div', ['paramBox'], [
+                    getBrilliantElement('label', [], `Param ${paramIndex +1}`),
+                    paramInput
+                ]);
+            });
+            container.append(...paramInputs);
+            return container;
+        }
+        const progressionBoxes = new Map([
+            [PROGRESSION_NONE, {
+                optionLabel: "None",
+                nrOfParams: 0
+            }],
+            [PROGRESSION_LINEAR, {
+                optionLabel: "Linear",
+                nrOfParams: 2
+            }],
+            [PROGRESSION_CONSTANT, {
+                optionLabel: "Constant",
+                nrOfParams: 1
+            }],
+            [PROGRESSION_STEPS, {
+                optionLabel: "Steps",
+                nrOfParams: rawProgram.numberOfIterations
+            }],
+        ]);
+        const getDeleteSetButton = (setContainer, movement, setIndex) => {
+            const button = getBrilliantElement('button', ['clearButton'], '🗑');
+            button.onclick = () => {
+                setContainer.remove();
+                movement.sets.splice(setIndex, 1);
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        };
+        const getAddSetButton = (movement) => {
+            const button = getBrilliantElement('button', [], 'Add set');
+            button.onclick = () => {
+                movement.sets.push({
+                    reps: {type: PROGRESSION_NONE, params: []},
+                    rpe: {type: PROGRESSION_NONE, params: []},
+                    perc: {type: PROGRESSION_NONE, params: []},
+                    weight: {type: PROGRESSION_NONE, params: []},
+                    repeat: {type: PROGRESSION_NONE, params: []}
+                });
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        };
+        const getDeleteMovementButton = (movementContainer, day, movementIndex) => {
+            const button = getBrilliantElement('button', ['clearButton'], '🗑');
+            button.onclick = () => {
+                movementContainer.remove();
+                day.splice(movementIndex, 1);
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        };
+        const getAddMovementButton = (day) => {
+            const button = getBrilliantElement('button', [], 'Add movement');
+            button.onclick = () => {
+                day.push({
+                    movementId: 0,
+                    sets: [{
+                        reps: {type: PROGRESSION_NONE, params: []},
+                        rpe: {type: PROGRESSION_NONE, params: []},
+                        perc: {type: PROGRESSION_NONE, params: []},
+                        weight: {type: PROGRESSION_NONE, params: []},
+                        repeat: {type: PROGRESSION_NONE, params: []}
+                    }]
+                });
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        }
+        const getDeleteDayButton = (dayContainer, program, dayIndex) => {
+            const button = getBrilliantElement('button', ['clearButton'], '🗑');
+            button.onclick = () => {
+                dayContainer.remove();
+                program.days.splice(dayIndex, 1);
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        }
+        const getAddDayButton = (program) => {
+            const button = getBrilliantElement('button', [], 'Add day');
+            button.onclick = () => {
+                program.days.push([{
+                    movementId: 0,
+                    sets: [{
+                        reps: {type: PROGRESSION_NONE, params: []},
+                        rpe: {type: PROGRESSION_NONE, params: []},
+                        perc: {type: PROGRESSION_NONE, params: []},
+                        weight: {type: PROGRESSION_NONE, params: []},
+                        repeat: {type: PROGRESSION_NONE, params: []}
+                    }]
+                }]);
+                allDaysContainer.dispatchEvent(new Event('render'));
+            };
+            return button;
+        }
+        const allDaysContainer = getBrilliantElement('div', ['allDaysContainer']);
+        allDaysContainer.addEventListener('render', event => {
+            while (allDaysContainer.firstChild) {
+                allDaysContainer.removeChild(allDaysContainer.firstChild);
+            }
+            allDaysContainer.append(
+                ...rawProgram.days.map((day, dayIndex) => {
+                    const dayContainer = getBrilliantElement('fieldset', ['dayEditContainer']);
+                    dayContainer.append(
+                        getBrilliantElement('legend', [], [`Day ${dayIndex +1}`, getDeleteDayButton(dayContainer, rawProgram, dayIndex)]),
+                        ...day.map((movement, movementIndex) => {
+                            const movementCointainter = getBrilliantElement('div', ['movementEditContainer']);
+                            const setContainers = movement.sets.map((set, setIndex) => {
+                                const setContainer = getBrilliantElement('div', ['setContainer']);
+                                setContainer.append(
+                                    getBrilliantElement('h3', [], `Set ${setIndex +1}`),
+                                    getDeleteSetButton(setContainer, movement, setIndex),
+                                    ...Object.entries(set).map(([pKey, pValue]) => {
+                                        const progressionContainer =  getBrilliantElement('div', ['progressionContainer']);
+                                        const progressionSelect = getBrilliantElement('select', ['progressionSelect']);
+                                        const progressionEditor = getBrilliantElement('div', ['progressionEditor']);
+                                        progressionBoxes.forEach((pObj, pType) => {
+                                            const progressionOption = getBrilliantElement('option', [], pObj.optionLabel);
+                                            progressionOption.value = pType;
+                                            if (pType === pValue.type) {
+                                                progressionOption.selected = true;
+                                            }
+                                            progressionSelect.append(progressionOption);
+                                        });
+                                        setMutationInput(pValue, 'type', progressionSelect);
+                                        progressionSelect.addEventListener('change', () => {
+                                            while (progressionEditor.firstChild) {
+                                                progressionEditor.removeChild(progressionEditor.firstChild);
+                                            }
+                                            const progressionParamLenght = new Map([
+                                                [PROGRESSION_NONE, 0],
+                                                [PROGRESSION_LINEAR, 2],
+                                                [PROGRESSION_CONSTANT, 1],
+                                                [PROGRESSION_STEPS, 10],
+                                            ]);
+                                            progressionEditor.append(
+                                                renderParamBox(
+                                                    pValue.params, 
+                                                    progressionParamLenght.get(Number(progressionSelect.value))
+                                                )
+                                            );
+                                        });
+                                        progressionSelect.dispatchEvent(new Event('change'));
+                                        progressionContainer.append(
+                                            getBrilliantElement('label', ['progressionLabel'], pKey),
+                                            progressionSelect,
+                                            progressionEditor
+                                        );
+                                        return progressionContainer;
+                                    })
+                                );
+                                return setContainer;
+                            });
+                            const movementSelect = getDumbMovementSelect(movement.movementId);
+                            setMutationInput(movement, 'movementId', movementSelect);
+                            movementCointainter.append(
+                                getBrilliantElement('h3', [], `Movement ${movementIndex +1}`),
+                                getDeleteMovementButton(movementCointainter, day, movementIndex),
+                                movementSelect,
+                                ...setContainers,
+                                getAddSetButton(movement)
+                            );
+                            return movementCointainter;
+                        }),
+                        getAddMovementButton(day)
+                    );
+                    return dayContainer; 
+                }),
+                getAddDayButton(rawProgram)
+            )
+        });
+        allDaysContainer.dispatchEvent(new Event('render'));
+
+        programEditorContainer.append(allDaysContainer);
+
+        const renderButton = getBrilliantElement('button', [], 'Save and render program');
+        renderButton.onclick = () => {
+            const shareString = getSharableProgram(rawProgram);
+            // console.log(shareString);
+            saveProgram(rawProgram.title, shareString);
+            ProgramContainer.renderProgram({title: rawProgram.title, shareString: shareString});
+        }
+        programEditorContainer.append(renderButton);
+        programEditorContainer.hidden = (shareString.length < 3) ? false : true;
+        this.programEditorContainer = programEditorContainer;
+    }
+}
+
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
-    selectElement.id = 9999; //'9-9-9-9-9';
-    const selectedvalue = getSetting(selectElement.id)(0);
+    selectElement.id = 9999;
+    selectElement.value = 0;
     selectElement.onchange = () => {
-        autosave();
+        autosaveProgress();
         removeStoredInputKeys();
         saveSetting(selectElement.id)(selectElement.value);
-        ProgramContainer.renderProgram();
-        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}`;
+        ProgramContainer.renderProgram(programSchemes[selectElement.value]);
     };
+    const hamburgerOption = getBrilliantElement('option', [], '≡');
+    hamburgerOption.disabled = true;
+    hamburgerOption.selected = true;
+    selectElement.append(hamburgerOption);
+
     selectElement.append(...programSchemes.map((programScheme, index) => {
         const option = getBrilliantElement('option', [], programScheme.title);
-            option.value = index;
-            if (index == selectedvalue) {
-                option.selected = true;
-            }
-            return option;
+        option.value = index;
+        return option;
     }));
     return selectElement;
 }
@@ -477,6 +812,21 @@ const getProgressionFormula = progressionTemplate => {
     return progressions.none();
 }
 
+const fillSetParams = rawProg => ({
+    numberOfIterations: rawProg.numberOfIterations,
+    title: rawProg.title,
+    days: rawProg.days.map(day => day.map(movement => ({
+        movementId: movement.movementId,
+        sets: movement.sets.map(set => ({
+            reps: set.hasOwnProperty('reps') ? set.reps : {type: PROGRESSION_NONE, params: []},
+            rpe: set.hasOwnProperty('rpe') ? set.rpe : {type: PROGRESSION_NONE, params: []},
+            perc: set.hasOwnProperty('perc') ? set.perc : {type: PROGRESSION_NONE, params: []},
+            weight: set.hasOwnProperty('weight') ? set.weight : {type: PROGRESSION_NONE, params: []},
+            repeat: set.hasOwnProperty('repeat') ? set.repeat : {type: PROGRESSION_NONE, params: []},
+        }))
+    })))
+});
+
 const readyProgram = rawProg => ({
     numberOfIterations: rawProg.numberOfIterations,
     title: rawProg.title,
@@ -501,7 +851,7 @@ const setParams = {
 };
 
 const convertRawProgressionToArray = (typeId, rawProgression) => 
-    (typeof rawProgression == 'object') 
+    (typeof rawProgression == 'object' && rawProgression.type != PROGRESSION_NONE) 
     ? [typeId,
         1, // serves as length in parser
         rawProgression.type,
@@ -520,7 +870,7 @@ const getSharableProgram = rawProg => [
             movement.sets.length,
             movement.sets.map(set => [
                 0, // serves as id in parser
-                Object.keys(set).length,
+                Object.values(set).filter(s => s.type != PROGRESSION_NONE).length,
                 ...convertRawProgressionToArray(setParams.reps, set.reps),
                 ...convertRawProgressionToArray(setParams.rpe, set.rpe),
                 ...convertRawProgressionToArray(setParams.perc, set.perc),
@@ -536,8 +886,8 @@ const parseShortened = d => d.split(/(?=-)/g).map(chunk => (chunk[0] === '-') ? 
 const parseSharableProgram = (title, shareProgram) => {
     const atoms = parseShortened(shareProgram).map(atom => b62ToDec(atom));
     const parseDays = (nrOfDays, data) => {
-        let allCounters = [0,0,0,0,0,0,nrOfDays];
-        let result = [];
+        const allCounters = [0,0,0,0,0,0,nrOfDays];
+        const result = [];
         let findCounter = false;
         let findId = true;
         data.forEach(value => {
@@ -589,7 +939,7 @@ const parseSharableProgram = (title, shareProgram) => {
                 sets: movement.slice(1)
                     .filter(set => typeof set === 'object' && set.length > 0)
                     .map(set => {
-                        let setObj = {};
+                        const setObj = {};
                         set.slice(1).map(setParam => {
                             if (setParam[0] == setParams.reps) setObj.reps = parseProgression(setParam.slice(1));
                             else if (setParam[0] == setParams.rpe) setObj.rpe = parseProgression(setParam.slice(1));
@@ -603,66 +953,47 @@ const parseSharableProgram = (title, shareProgram) => {
     }
 }
 
-const standardPrograms = [
-    {
-        title: "Basic training program",
-        shareString: "5601020211125-2+1212190311127-2+13112Z55121401820211125-2+1212190311127-2+13112Z55121401220211125-2+1212190311127-2+13112Z55121401920211125-2+1212190311127-2+13112Z55121401b20211125-2+1212190311127-2+13112Z55121401a20211125-2+1212190311127-2+13112Z551214"
-    },
-    {
-        title: "Swiss program",
-        shareString: "5502020211125-2+1212190311127-2+13112Z551214k20211128-2+121218031112a-2+13112Z55121402520211125-2+1212190311127-2+13112Z551214l20211125-2+1212190311127-2+13112Z55121402b20211125-2+1212190311127-2+13112Z551214720211128-2+121218031112a-2+13112Z55121402n20211125-2+1212190311127-2+13112Z551214m20211125-2+1212180311127-2+13112Z55121402p20211128-2+121218031112a-2+13112Z551214n20211128-2+121218031112a-2+13112Z551214"
-    },
-    {
-        title: "Oldschool linear",
-        shareString: "660101031112a-2+13112W45112a-2+10181031112a-2+13112W45112a-2+10121031112a-2+13112W45112a-2+10191031112a-2+13112W45112a-2+101b1031112a-2+13112W45112a-2+101a1031112a-2+13112W45112a-2+1"
-    },
-];
-
 class ProgramContainer {
     static appContainer = getBrilliantElement('div', ['appContainer']);
     static first = true;
-    static renderProgram() {
+    static renderProgram(sharedProgramSetUp) {
         IdCreator.resetId();
         while (this.appContainer.firstChild) {
             this.appContainer.removeChild(this.appContainer.firstChild);
         }
+        //window.scrollTo({top: 0});
+        const avaliablePrograms = getAllAvaliablePrograms();
+        let rawProgramSetUp = avaliablePrograms[getSetting('9999')(0)];
+        if (typeof sharedProgramSetUp === 'object') {
+            rawProgramSetUp = sharedProgramSetUp;
+        }
+        const rawProg = parseSharableProgram(rawProgramSetUp.title, rawProgramSetUp.shareString);
+        ProgramEditor.initProgramEditorContainer(rawProgramSetUp.title, rawProgramSetUp.shareString);
+        const programSetUp = readyProgram(rawProg);
+        ProgramSettingsContainer.initProgramSettingsContainer(programSetUp);
+
         const programContainer = getBrilliantElement('div', ['programContainer']);
-        programContainer.addEventListener('render', event => {
-            while (programContainer.firstChild) {
-                programContainer.removeChild(programContainer.firstChild);
-            }
-            const actualProgram = event.detail.actualProgram;
-            var iterations = [...Array(actualProgram.numberOfIterations).keys()];
-            ProgramSettingsContainer.initProgramSettingsContainer(actualProgram);
-            programContainer.append(
-                ...iterations.map(currentIteration => {
-                    let cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
-                    let cycleContainer = getBrilliantElement('div', ['blockContainer'], cycleHeader);
-                    cycleContainer.id = `cycle${currentIteration}`;
-                    cycleContainer.append(
-                        ...actualProgram.days.map((movements, index) => getSessionMovementTable(currentIteration, index, movements))
-                    );
-                    return cycleContainer;
-                })
-            );
-        });
-    
-        const rawProgramSetUp = standardPrograms[getSetting('9999')(0)];
-        const programSetUp = readyProgram(parseSharableProgram(rawProgramSetUp.title, rawProgramSetUp.shareString));
-        programContainer.dispatchEvent(new CustomEvent('render', {detail: {actualProgram: programSetUp}}));
-    
+        const iterations = [...Array(programSetUp.numberOfIterations).keys()];
+        programContainer.append(
+            ...iterations.map(currentIteration => {
+                const cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
+                const cycleContainer = getBrilliantElement('div', ['blockContainer', 'weekelement'], cycleHeader);
+                cycleContainer.id = `cycle${currentIteration}`;
+                cycleContainer.append(
+                    ...programSetUp.days.map((movements, index) => getSessionMovementTable(currentIteration, index, movements))
+                );
+                return cycleContainer;
+            })
+        );
+
         const headerContainer = getBrilliantElement('div', ['headerContainer']);
-        headerContainer.addEventListener('render', event => {
-            while (headerContainer.firstChild) {
-                headerContainer.removeChild(headerContainer.firstChild);
-            }
-            headerContainer.append(
-                getProgramSelect(standardPrograms),
-                getBrilliantAnchorLinkList(programSetUp)
-            );
-        });
-        headerContainer.dispatchEvent(new Event('render'));
-        this.appContainer.append(headerContainer, programContainer);
+        headerContainer.append(
+            getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
+            getProgramSelect(avaliablePrograms),
+            getBrilliantAnchorLinkList(programSetUp)
+        );
+        this.appContainer.append(headerContainer, ProgramEditor.programEditorContainer, programContainer);
+
         if (this.first) {
             document.body.append(this.appContainer);
             this.first = false;
@@ -671,4 +1002,7 @@ class ProgramContainer {
 }
 
 // add stuff to document
+if (typeof getSetting('9999')() === 'undefined') {
+    saveSetting('9999')(0);
+}
 ProgramContainer.renderProgram();

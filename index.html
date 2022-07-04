@@ -8,110 +8,6 @@
         <title>Powerlifting training program app</title>
         <link rel="apple-touch-icon" href="/icons/apple192.png">
         <style>
-            .headerContainer {
-                top: 0;
-                z-index: 10;
-                margin: 0;
-                padding: 0;
-                position: sticky; top: 0;
-                background: linear-gradient(to right, #6ce3e7, #a0b0f8);
-                border-radius: 0.5em;
-            }
-            .stickylinks {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .cyclelink {
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                margin: 0.3em;
-                padding: 0.2em;
-            }
-            .cyclelink:nth-child(even) {
-                background: #89aee1c0;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .cyclelink:nth-child(odd) {
-                background: #9effb8c0;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .settingsLink {
-                background: white;
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                font-size: large;
-                margin: 0.3em;
-                padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .sharelink {
-                background: white;
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                font-size: large;
-                margin: 0.3em;
-                padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .clearlink {
-                background: lightpink;
-                color: black;
-                text-align: center;
-                text-decoration: none;
-                font-size: large;
-                margin: 0.3em;
-                padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .shareLinkContainer {
-                flex-basis: 100%;
-                margin-top: 0.5em;
-            }
-            .shareStringContainer {
-                margin: 0.5em;
-                border: 0.2em dotted aliceblue;
-                padding-bottom: 0.3em;
-            }
-            .presentedlink {
-                width: 15em;
-                margin: 0.3em;
-                padding: 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
-            }
-            .movementselect {
-                appearance: none;
-                -webkit-appearance: none;
-                border: none;
-                text-align-last:center;
-                font-size: large;
-                background-color: transparent;
-                font-family: monospace;
-            }
-            input[type=number] {
-                max-width: 4.5em;
-                padding: 0;
-                margin: 0;
-                border: 1px solid #eee;
-                background-color: #fffa;
-                text-align: right;
-                font-family: monospace;
-            }
-            input[type=text]:disabled {
-                width: 3em;
-                padding: 0;
-                margin: 0;
-                border: 1px solid #eee0;
-                font-family: monospace;
-                background-color: #fff0;
-                color: black;
-                text-align: center;
-            }
             body {
                 margin: 0;
                 font-family: monospace;
@@ -139,7 +35,67 @@
                 padding: 0;
                 margin: 0;
             }
-            .programselect {
+            legend {
+                width: auto;
+                margin-left: auto;
+                margin-right: auto;
+                font-size: medium;
+                padding: 0.1em 0.5em;
+                background-color: #ffffff80;
+                /* border-radius: 0.5em; */
+            }
+            input[type=number] {
+                max-width: 4.5em;
+                padding: 0;
+                margin: 0;
+                border: 1px solid #eee;
+                background-color: #fffa;
+                text-align: right;
+                font-family: monospace;
+            }
+            input[type=text]:disabled {
+                width: 3em;
+                padding: 0;
+                margin: 0;
+                border: 1px solid #eee0;
+                font-family: monospace;
+                background-color: #fff0;
+                color: black;
+                text-align: center;
+            }
+            button {
+                border: 0;
+                /* background-color: transparent; */
+                background: white;
+                color: black;
+                text-align: center;
+                text-decoration: none;
+                font-size: inherit;
+                margin: 0.3em;
+                padding: 0.01em 0.2em;
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
+                max-width: 15em;
+                line-height: 1.4em;
+            }
+            h3 {
+                width: fit-content;
+                margin: 0.3em;
+            }
+            .headerContainer {
+                top: 0;
+                z-index: 10;
+                margin: 0;
+                padding: 0;
+                position: sticky; top: 0;
+                background: linear-gradient(to right, #6ce3e7, #a0b0f8);
+                /* border-radius: 0.5em; */
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .programHeader {
+                /* flex-basis: 80%; */
+                margin: 0;
                 appearance: none;
                 -webkit-appearance: none;
                 border: none;
@@ -147,10 +103,62 @@
                 background-color: transparent;
                 font-family: monospace;
                 color: black;
-                filter: drop-shadow(0.15em 0.15em 0em #d46ce7d0);
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 display: inline-block;
-                margin: 0;
                 font-size: xx-large;
+                max-width: 15em;
+            }
+            .programselect {
+                /* flex-basis: 20%; */
+                appearance: none;
+                -webkit-appearance: none;
+                border: none;
+                text-align-last:center;
+                background-color: white;
+                font-family: monospace;
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
+                margin: 0.1em;
+                font-size: xx-large;
+                width: 1em;
+                padding: 0;
+                line-height: 1em;
+            }
+            .linkList {
+                flex-basis: 100%;
+            }
+            .cyclelink {
+                color: black;
+                text-align: center;
+                text-decoration: none;
+                margin: 0.3em;
+                padding: 0.2em;
+            }
+            .shareLinkContainer {
+                flex-basis: 100%;
+                margin-top: 0.5em;
+                display: flex;
+                flex-flow: column;
+                align-items: center;
+            }
+            .shareStringContainer {
+                margin: 0.5em;
+                border: 0.2em dotted aliceblue;
+                padding-bottom: 0.3em;
+            }
+            .presentedlink {
+                width: 15em;
+                margin: 0.3em;
+                padding: 0.2em;
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
+            }
+            .movementselect {
+                appearance: none;
+                -webkit-appearance: none;
+                border: none;
+                text-align-last:center;
+                font-size: large;
+                background-color: transparent;
+                font-family: monospace;
             }
             .e1rm {
                 width: 4em;
@@ -167,10 +175,11 @@
             }
             .dayContainer {
                 border: 0;
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
                 width: min-content;
                 padding: 0 0 0 0;
                 margin-bottom: 1em;
+                scroll-margin-top: 5em;
             }
             .dayContainer:nth-child(even) {
                 background: #ffffff50;
@@ -180,34 +189,23 @@
                 background: #0000000d;
                 filter: drop-shadow(0.2em 0.2em 0em #00000010);
             }
-            legend {
-                width: auto;
-                margin-left: auto;
-                margin-right: auto;
-                font-size: medium;
-                padding: 0.1em 0.5em;
-                background-color: #ffffff80;
-                border-radius: 0.5em;
-            }
             .movementContainer {
                 padding: 0 0.3em 0.3em 0.3em;
             }
             .sessionContainer {
                 padding: 0 1em 1em 1em;
             }
-            .blockContainer:nth-child(even) {
+            .weekelement:nth-child(even) {
                 background: #89aee1d0;
-                color: black;
-                filter: drop-shadow(0.5em 0.5em 0em #d46ce7d0);
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
             }
-            .blockContainer:nth-child(odd) {
+            .weekelement:nth-child(odd) {
                 background: #9effb8d0;
-                color: black;
-                filter: drop-shadow(0.5em 0.5em 0em #d46ce7d0);
+                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
             }
             .blockContainer {
                 padding: 0.5em;
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
                 margin: 0.5em;
                 scroll-margin-top: 5em;
                 height: fit-content;
@@ -217,23 +215,17 @@
                 font-size: x-small;
                 width: 15em;
             }
-            .dayEditContainer {
+            .programEditorContainer {
+                flex-basis: 100%;
                 display: flex;
-                flex-direction: row;
-                justify-content: center;
-                flex-wrap: wrap;
+                flex-direction: column;
+                align-items: center;
             }
-            .progressionEditor {
+            .editorFieldBox {
                 display: flex;
-            }
-            .progressionRadioListContainer {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            .progressionBox {
-                border: 0.1em solid;
+                justify-content: space-between;
+                padding: 0 1em;
+                max-width: 30em;
             }
             .programSettingsContainer {
                 flex-basis: 100%;
@@ -244,6 +236,103 @@
                 margin-right: auto;
                 border: 0;
                 background-color: #fff5;
+            }
+            .cleanSlateContainer {
+                display: inline-block;
+                border: 0.2em dashed lightcoral;
+                padding: 0.5em;
+            }
+            .progressionContainer {
+                display: flex;
+                justify-content: space-between;
+                flex-basis: 100%;
+                border-bottom: 0.2em dotted gray;
+                margin: 0.2em;
+            }
+            .allDaysContainer {
+                display: flex;
+                flex-wrap: wrap;
+                flex-direction: column;
+                align-content: flex-start;
+            }
+            .dayEditContainer {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+                border: 0;
+                /* border-radius: 0.5em; */
+                padding: 0 0 0 0;
+                margin-bottom: 1em;
+            }
+            .dayEditContainer:nth-child(even) {
+                background-image: linear-gradient(
+                    135deg, #fdfb7650 25%, transparent 25%, 
+                    transparent 50%, #fdfb7650 50%, #fdfb7650 75%, 
+                    transparent 75%, transparent 100%);
+                background-size: 1em 1em;
+            }
+            .dayEditContainer:nth-child(odd) {
+                background-image: linear-gradient(
+                    135deg, #EE617D20 25%, transparent 25%, 
+                    transparent 50%, #EE617D20 50%, #EE617D20 75%, 
+                    transparent 75%, transparent 100%);
+                background-size: 1em 1em;
+            }
+            .setContainer {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 0.5em;
+            }
+            .setContainer:nth-child(odd) {
+                background: #8eee6120;
+            }
+            .setContainer:nth-child(even) {
+                background: #6ce3e77a;
+            }
+            .movementEditContainer {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                background-color: #0000000d;
+                padding: 1em;
+                margin: 0.5em;
+                max-width: 30em;
+                height: fit-content;
+            }
+            .editorRemoveStuffButton {
+                background: lightpink;
+                color: black;
+                text-align: center;
+                text-decoration: none;
+                font-size: large;
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
+                height: fit-content;
+                margin: 0.3em;
+            }
+            .progressionLabel {
+                flex-basis: 20%;
+            }
+            .progressionSelect {
+                height: fit-content;
+                flex-basis: 20%;
+            }
+            .progressionEditor {
+                display: flex;
+                flex-basis: 40%;
+            }
+            .dumbmovementselect {
+                flex-basis: 100%;
+                height: fit-content;
+            }
+            
+            
+            .clearButton {
+                background-color: lightpink;
+            }
+            [hidden]{
+                display:none;
             }
         </style>
         
