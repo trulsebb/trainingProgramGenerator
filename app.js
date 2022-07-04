@@ -63,6 +63,10 @@ const standardPrograms = [
         title: "Oldschool linear",
         shareString: "oo04040c4448E-2+4c448-23Kgk448E-2+404w40c4448E-2+4c448-23Kgk448E-2+404840c4448E-2+4c448-23Kgk448E-2+404A40c4448E-2+4c448-23Kgk448E-2+404I40c4448E-2+4c448-23Kgk448E-2+404E40c4448E-2+4c448-23Kgk448E-2+4"
     },
+    {
+        title: "Advanzed program",
+        shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04wk088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ak088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ek088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S"
+    }
 ];
 
 const maxFormula = (weight, reps) => weight * (36 / (37 - reps));
@@ -111,7 +115,7 @@ const getB62FromKeyVal = (key, value) => {
 };
 
 const removeStoredInputKeys = () => getStoredKeys()
-    .filter(skey => skey.match(/^(?!9999)\d{4}$/g))
+    .filter(skey => skey.match(/^\d{4}$/g))
     .map(k => { localStorage.removeItem(k)});
 
 const getShareString = () => getStoredKeys()
@@ -128,27 +132,22 @@ const getKeyValFromB62 = b62 => {
 
 const parseShareString = shareString => shareString.split('-').map(b62 => getKeyValFromB62(b62));
 
-const autosave = () => {
+const autosaveProgress = () => {
     const dateString = new Date().toISOString().slice(0,10);
     const previousSetting = getSetting('9999')(0);
-    const serializedKey = standardPrograms[previousSetting].title;
     const stringToSave = getShareString();
     if (stringToSave.split('-').length > 1) {
-        localStorage.setItem(`${serializedKey} ${dateString}`, getShareString());
+        localStorage.setItem(`progress-${previousSetting}-${dateString}`, getShareString());
     }
 };
 
 const importFromShareString = (shareString) => {
-    autosave();
+    autosaveProgress();
     removeStoredInputKeys();
     parseShareString(shareString).map(row => saveSetting(row[0])(row[1]));
 };
 
-const saveSetting = elementId => value => {
-    if (typeof value !== undefined && value != null) {
-        localStorage.setItem(elementId, value);
-    }
-}
+const saveSetting = elementId => value => localStorage.setItem(elementId, value);
 const getSetting = elementId => defaultValue => {
     if (!localStorage.getItem(elementId)) {
         return defaultValue;
@@ -157,9 +156,20 @@ const getSetting = elementId => defaultValue => {
 };
 
 const saveProgram = (programName, shareString) => {
-    localStorage.setItem(`${programName}`, shareString);
+    localStorage.setItem(`program-${programName}`, shareString);
 };
 
+const getSavedPrograms = () => {
+    const programList = getStoredKeys()
+        .filter(skey => skey.match(/^program-/g))
+        .map(k => ({
+            title: k.substring('program-'.length),
+            shareString: localStorage.getItem(k)
+        }));
+    return programList;
+}
+
+const getAllAvaliablePrograms = () =>  [...standardPrograms, ...getSavedPrograms()];
 
 // ui
 const getBrilliantElement = (type, classes, content) => {
@@ -250,7 +260,7 @@ const getShareContainer = () => {
         const shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
         const saveSerializedButton = getBrilliantElement('button', [], 'Save current');
         saveSerializedButton.onclick = () => {
-            autosave();
+            autosaveProgress();
             hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
         }
         const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
@@ -269,7 +279,7 @@ const getBrilliantAnchorLinkList = programScheme => {
         ProgramSettingsContainer.toggleVisibility();
     }
     const weekLinks = iterations.map(iteration => {
-        const link = getBrilliantElement('a', ['cyclelink', 'weekelement'], `Week ${iteration + 1}`);
+        const link = getBrilliantElement('a', ['cyclelink', 'weekelement'], `Week${iteration + 1}`);
         link.href = `#cycle${iteration}`;
         return link;
     });
@@ -348,6 +358,7 @@ const getDumbMovementSelect = (defaultvalue) => {
 
 const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     const dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
+    dayContainer.id = `${currentIteration}-${dayIndex}`;
     dayContainer.append(...movements.map(((movement, movementIndex) => {
         const _setRefs = [];
         const sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
@@ -426,20 +437,20 @@ class ProgramSettingsContainer {
             removeStoredInputKeys();
             ProgramContainer.renderProgram();
         };
-        programSettingsContainer.append(getBrilliantElement('div', ['cleanSlateContainer'], ["Reset program completely:", cleanSlate]));
+        programSettingsContainer.append(getBrilliantElement('div', ['cleanSlateContainer'], ["Reset program:", cleanSlate]));
         // Start date input
 
         // Movement Maxes
-        const movementsWithRPE = programSetUp.days.map(day => day
-            .filter(movement => movement.sets.some(set => set.rpe(1) !== null))
+        const movementsOptionalMax = programSetUp.days.map(day => day
+            .filter(movement => movement.sets.some(set => set.rpe(1) !== null && set.reps(1) !== null))
             .map(movement => movement.movementId))
             .flat();
-        const movementsWithoutRPE = programSetUp.days.map(day => day
-            .filter(movement => movement.sets.every(set => set.rpe(1) === null))
+        const movementsWithRequiredMax = programSetUp.days.map(day => day
+            .filter(movement => movement.sets.every(set => set.rpe(1) === null || set.reps(1) === null))
             .map(movement => movement.movementId))
             .flat();
         
-        programSettingsContainer.append(...[{title: "Required e1RMs", movs: movementsWithoutRPE}, {title: "Optional e1RMs", movs:movementsWithRPE}].map(movementList => 
+        programSettingsContainer.append(...[{title: "Required e1RMs", movs: movementsWithRequiredMax}, {title: "Optional e1RMs", movs:movementsOptionalMax}].map(movementList => 
             (movementList.movs.length > 0) 
                 ? getBrilliantElement('table', ['settingsTable'], [
                     getBrilliantElement('caption', [], `${movementList.title}:`),
@@ -461,13 +472,17 @@ class ProgramSettingsContainer {
                 ])
                 : null
         ).filter(element => element !== null));
-        if (movementsWithoutRPE.length == 0 || [...this.movementsMaxInputMap.values()].every(maxInput => maxInput.value > 0)) {
+        if (movementsWithRequiredMax.length == 0 
+            || [...this.movementsMaxInputMap.keys()]
+                .filter(maxKey => movementsWithRequiredMax.includes(maxKey))
+                .every(maxKey => this.movementsMaxInputMap.get(maxKey).value > 0)) {
             programSettingsContainer.hidden = true;
         }
         const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
         hideSettingsButton.onclick = this.toggleVisibility;
         programSettingsContainer.append(
             ProgramEditor.getProgramEditorButton(), 
+            ProgramEditor.getNewProgramButton(),
             hideSettingsButton
         );
 
@@ -479,6 +494,19 @@ class ProgramEditor {
     static programEditorContainer = null;
     static toggleVisibility = () => {
         this.programEditorContainer.hidden = !this.programEditorContainer.hidden;
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+    static getNewProgramButton = () => {
+        const button = getBrilliantElement('button', [], 'Create new program');
+        button.onclick = () => {
+            autosaveProgress();
+            removeStoredInputKeys();
+            ProgramContainer.renderProgram({title: "New program", shareString: "k0"});
+        };
+        return button;
     }
     static getProgramEditorButton = () => {
         const button = getBrilliantElement('button', [], 'Edit Program');
@@ -557,6 +585,7 @@ class ProgramEditor {
             button.onclick = () => {
                 setContainer.remove();
                 movement.sets.splice(setIndex, 1);
+                allDaysContainer.dispatchEvent(new Event('render'));
             };
             return button;
         };
@@ -579,6 +608,7 @@ class ProgramEditor {
             button.onclick = () => {
                 movementContainer.remove();
                 day.splice(movementIndex, 1);
+                allDaysContainer.dispatchEvent(new Event('render'));
             };
             return button;
         };
@@ -604,6 +634,7 @@ class ProgramEditor {
             button.onclick = () => {
                 dayContainer.remove();
                 program.days.splice(dayIndex, 1);
+                allDaysContainer.dispatchEvent(new Event('render'));
             };
             return button;
         }
@@ -707,29 +738,25 @@ class ProgramEditor {
         const renderButton = getBrilliantElement('button', [], 'Save and render program');
         renderButton.onclick = () => {
             const shareString = getSharableProgram(rawProgram);
-            console.log(shareString);
+            // console.log(shareString);
+            saveProgram(rawProgram.title, shareString);
             ProgramContainer.renderProgram({title: rawProgram.title, shareString: shareString});
         }
         programEditorContainer.append(renderButton);
-        programEditorContainer.hidden = (shareString == "k0") ? false : true;
+        programEditorContainer.hidden = (shareString.length < 3) ? false : true;
         this.programEditorContainer = programEditorContainer;
     }
 }
 
-const NEW_PROGRAM_ID = 1337;
-
 const getProgramSelect = (programSchemes) => {
     const selectElement = getBrilliantElement('select', ['programselect']);
     selectElement.id = 9999;
+    selectElement.value = 0;
     selectElement.onchange = () => {
-        autosave();
+        autosaveProgress();
         removeStoredInputKeys();
-        if (selectElement.value == NEW_PROGRAM_ID) {
-            ProgramContainer.renderProgram({title: "New program", shareString: "k0"});
-        } else {
-            saveSetting(selectElement.id)(selectElement.value);
-            ProgramContainer.renderProgram(programSchemes[selectElement.value]);
-        }
+        saveSetting(selectElement.id)(selectElement.value);
+        ProgramContainer.renderProgram(programSchemes[selectElement.value]);
     };
     const hamburgerOption = getBrilliantElement('option', [], '≡');
     hamburgerOption.disabled = true;
@@ -741,9 +768,6 @@ const getProgramSelect = (programSchemes) => {
         option.value = index;
         return option;
     }));
-    const newProgramOption = getBrilliantElement('option', [], 'Create new program');
-    newProgramOption.value = NEW_PROGRAM_ID;
-    selectElement.append(newProgramOption);
     return selectElement;
 }
 
@@ -938,8 +962,8 @@ class ProgramContainer {
             this.appContainer.removeChild(this.appContainer.firstChild);
         }
         //window.scrollTo({top: 0});
-        
-        let rawProgramSetUp = standardPrograms[getSetting('9999')(0)];
+        const avaliablePrograms = getAllAvaliablePrograms();
+        let rawProgramSetUp = avaliablePrograms[getSetting('9999')(0)];
         if (typeof sharedProgramSetUp === 'object') {
             rawProgramSetUp = sharedProgramSetUp;
         }
@@ -965,7 +989,7 @@ class ProgramContainer {
         const headerContainer = getBrilliantElement('div', ['headerContainer']);
         headerContainer.append(
             getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
-            getProgramSelect(standardPrograms),
+            getProgramSelect(avaliablePrograms),
             getBrilliantAnchorLinkList(programSetUp)
         );
         this.appContainer.append(headerContainer, ProgramEditor.programEditorContainer, programContainer);
@@ -978,4 +1002,7 @@ class ProgramContainer {
 }
 
 // add stuff to document
+if (typeof getSetting('9999')() === 'undefined') {
+    saveSetting('9999')(0);
+}
 ProgramContainer.renderProgram();

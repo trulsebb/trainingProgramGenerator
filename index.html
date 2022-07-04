@@ -42,7 +42,7 @@
                 font-size: medium;
                 padding: 0.1em 0.5em;
                 background-color: #ffffff80;
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
             }
             input[type=number] {
                 max-width: 4.5em;
@@ -73,8 +73,9 @@
                 font-size: inherit;
                 margin: 0.3em;
                 padding: 0.01em 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 max-width: 15em;
+                line-height: 1.4em;
             }
             h3 {
                 width: fit-content;
@@ -87,7 +88,7 @@
                 padding: 0;
                 position: sticky; top: 0;
                 background: linear-gradient(to right, #6ce3e7, #a0b0f8);
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: center;
@@ -102,7 +103,7 @@
                 background-color: transparent;
                 font-family: monospace;
                 color: black;
-                filter: drop-shadow(0.15em 0.15em 0em #d46ce7d0);
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 display: inline-block;
                 font-size: xx-large;
                 max-width: 15em;
@@ -115,7 +116,7 @@
                 text-align-last:center;
                 background-color: white;
                 font-family: monospace;
-                filter: drop-shadow(0.15em 0.15em 0em #d46ce7d0);
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 margin: 0.1em;
                 font-size: xx-large;
                 width: 1em;
@@ -148,7 +149,7 @@
                 width: 15em;
                 margin: 0.3em;
                 padding: 0.2em;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
             }
             .movementselect {
                 appearance: none;
@@ -174,10 +175,11 @@
             }
             .dayContainer {
                 border: 0;
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
                 width: min-content;
                 padding: 0 0 0 0;
                 margin-bottom: 1em;
+                scroll-margin-top: 5em;
             }
             .dayContainer:nth-child(even) {
                 background: #ffffff50;
@@ -203,7 +205,7 @@
             }
             .blockContainer {
                 padding: 0.5em;
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
                 margin: 0.5em;
                 scroll-margin-top: 5em;
                 height: fit-content;
@@ -259,7 +261,7 @@
                 justify-content: center;
                 flex-wrap: wrap;
                 border: 0;
-                border-radius: 0.5em;
+                /* border-radius: 0.5em; */
                 padding: 0 0 0 0;
                 margin-bottom: 1em;
             }
@@ -305,7 +307,7 @@
                 text-align: center;
                 text-decoration: none;
                 font-size: large;
-                filter: drop-shadow(0.2em 0.2em 0em #d46ce7d0);
+                filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 height: fit-content;
                 margin: 0.3em;
             }
@@ -343,6 +345,6 @@
                 navigator.serviceWorker.register("/serviceworker.js");
             }
         </script>
-        <script src="app.js"></script>
+        <script src="miniapp.js"></script>
     </body>
 </html> 
