@@ -220,85 +220,99 @@ const getBrilliantDisabledInput = (value) => {
     return element;
 };
 
-const getShareContainer = () => {
-    const hiddenShareLinkContainer = getBrilliantElement('div', ['shareLinkContainer']);
-    hiddenShareLinkContainer.hidden = true;
-    hiddenShareLinkContainer.addEventListener('toggleVisibility', () => { 
-        while (hiddenShareLinkContainer.firstChild) {
-            hiddenShareLinkContainer.removeChild(hiddenShareLinkContainer.firstChild);
+class ShareContainer {
+    static shareContainer = null;
+    static getShareButton = () => {
+        const shareLink = getBrilliantElement('button', [], '💾');
+        shareLink.onclick = () => {
+            this.shareContainer.dispatchEvent(new Event('toggleVisibility'));
+            this.shareContainer.hidden = !this.shareContainer.hidden;
         }
-        hiddenShareLinkContainer.append(
-            ...getStoredKeys()
-                .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}$/g))
-                .sort()
-                .map(k => {
-                    const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
-                    const removeButton = getBrilliantElement('button', ['clearButton'], '🗑');
-                    removeButton.onclick = () => {
-                        localStorage.removeItem(k);
-                        hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
-                    };
-                    const textBoxWithString = getBrilliantElement('input', ['presentedlink'], '');
-                    textBoxWithString.type = 'text';
-                    textBoxWithString.value = localStorage.getItem(k);
-                    const copyLinkButton = getBrilliantElement('button', [], 'Copy');
-                    copyLinkButton.onclick = () => {
-                        textBoxWithString.select();
-                        document.execCommand("copy");
-                    };
-                    const restoreButton = getBrilliantElement('button', [], 'Restore');
-                    restoreButton.onclick = () => {
-                        importFromShareString(textBoxWithString.value);
-                        ProgramContainer.renderProgram();
-                        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}?${textBoxWithString.value}`;
-                    };
-                    shareStringContainer.append(removeButton, textBoxWithString, copyLinkButton, restoreButton);
-                    return shareStringContainer;
-                }
-            )
-        );
-        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
-        const saveSerializedButton = getBrilliantElement('button', [], 'Save current');
-        saveSerializedButton.onclick = () => {
-            autosaveProgress();
-            hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
-        }
-        const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
-        hideSettingsButton.onclick = () => { hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden; };
-        shareStringContainer.append(saveSerializedButton);
-        hiddenShareLinkContainer.append(shareStringContainer, hideSettingsButton);
-    });
-    return hiddenShareLinkContainer;
-};
+        return shareLink;
+    }
+    static initShareContainer = () => {
+        const hiddenShareLinkContainer = getBrilliantElement('div', ['shareLinkContainer']);
+        hiddenShareLinkContainer.hidden = true;
+        hiddenShareLinkContainer.addEventListener('toggleVisibility', () => { 
+            while (hiddenShareLinkContainer.firstChild) {
+                hiddenShareLinkContainer.removeChild(hiddenShareLinkContainer.firstChild);
+            }
+            hiddenShareLinkContainer.append(
+                ...getStoredKeys()
+                    .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}$/g))
+                    .sort()
+                    .map(k => {
+                        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
+                        const removeButton = getBrilliantElement('button', ['clearButton'], '🗑');
+                        removeButton.onclick = () => {
+                            localStorage.removeItem(k);
+                            hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
+                        };
+                        const textBoxWithString = getBrilliantElement('input', ['presentedlink'], '');
+                        textBoxWithString.type = 'text';
+                        textBoxWithString.value = localStorage.getItem(k);
+                        const copyLinkButton = getBrilliantElement('button', [], 'Copy');
+                        copyLinkButton.onclick = () => {
+                            textBoxWithString.select();
+                            document.execCommand("copy");
+                        };
+                        const restoreButton = getBrilliantElement('button', [], 'Restore');
+                        restoreButton.onclick = () => {
+                            importFromShareString(textBoxWithString.value);
+                            ProgramContainer.renderProgram();
+                            //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}?${textBoxWithString.value}`;
+                        };
+                        shareStringContainer.append(removeButton, textBoxWithString, copyLinkButton, restoreButton);
+                        return shareStringContainer;
+                    }
+                )
+            );
+            const shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
+            const saveSerializedButton = getBrilliantElement('button', [], 'Save current');
+            saveSerializedButton.onclick = () => {
+                autosaveProgress();
+                hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
+            }
+            const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
+            hideSettingsButton.onclick = () => { hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden; };
+            shareStringContainer.append(saveSerializedButton);
+            hiddenShareLinkContainer.append(shareStringContainer, hideSettingsButton);
+        });
+        this.shareContainer = hiddenShareLinkContainer;
+    };
+}
 
 const getBrilliantAnchorLinkList = programScheme => {
     const iterations = [...Array(programScheme.numberOfIterations).keys()];
-    const linkList = getBrilliantElement('div', ['linkList']);
-    const programSettingsLink = getBrilliantElement('button', [], '🛠');
-    programSettingsLink.onclick = () => {
-        ProgramSettingsContainer.toggleVisibility();
-    }
-    const weekLinks = iterations.map(iteration => {
-        const link = getBrilliantElement('a', ['cyclelink', 'weekelement'], `Week${iteration + 1}`);
-        link.href = `#cycle${iteration}`;
-        return link;
-    });
-    const shareLink = getBrilliantElement('button', [], '💾');
-    const hiddenShareLinkContainer = getShareContainer();
-    shareLink.onclick = () => {
-        hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
-        hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden;
-    }
+    const linkList = getBrilliantElement('div', ['linkList'], iterations.map(iteration => {
+        const anchorbuttonContainer = getBrilliantElement('div', ['tightdiv', 'weekelement']);
+        const link = getBrilliantElement('button', ['cyclelink'], `Week${iteration + 1}`);
+        const dayButtonList = getBrilliantElement('div', ['dayButtonList'])
+        dayButtonList.append(...[...Array(programScheme.days.length).keys()].map(dayIndex => {
+            const dayButton = getBrilliantElement('button', ['dayButton'], `Day ${dayIndex + 1}`);
+            dayButton.onclick = () => {
+                document.querySelector(`#day${iteration}-${dayIndex}`).scrollIntoView({
+                    behavior: 'smooth'
+                });
+                dayButtonList.hidden = true;
+            };
+            return dayButton;
+        }));
+        dayButtonList.hidden = true;
+        anchorbuttonContainer.append(link, dayButtonList);
+        link.onclick = () => {
+            dayButtonList.hidden = !dayButtonList.hidden;
+        }
+        return anchorbuttonContainer;
+    }));
     
-    linkList.append(
-        ...weekLinks, 
-        programSettingsLink,
-        shareLink, 
-        ProgramSettingsContainer.programSettingsContainer, 
-        hiddenShareLinkContainer
-    );
-    
-    return linkList;
+    return getBrilliantElement('div', ['buttonBar'], [
+        linkList,
+        getBrilliantElement('div', ['linklist'], [
+            ProgramSettingsContainer.getProgramSettingsButton(),
+            ShareContainer.getShareButton(),
+        ])
+    ]);
 };
 
 // +------------+----------+----+------------------+----+--------------------+
@@ -358,7 +372,7 @@ const getDumbMovementSelect = (defaultvalue) => {
 
 const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     const dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
-    dayContainer.id = `${currentIteration}-${dayIndex}`;
+    dayContainer.id = `day${currentIteration}-${dayIndex}`;
     dayContainer.append(...movements.map(((movement, movementIndex) => {
         const _setRefs = [];
         const sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
@@ -419,6 +433,13 @@ class ProgramSettingsContainer {
     static programSettingsContainer = getBrilliantElement('div', ['programSettingsContainer']);
     static toggleVisibility = () => {
         this.programSettingsContainer.hidden = !this.programSettingsContainer.hidden;
+    }
+    static getProgramSettingsButton = () => {
+        const programSettingsLink = getBrilliantElement('button', [], '🛠');
+        programSettingsLink.onclick = () => {
+            this.toggleVisibility();
+        }
+        return programSettingsLink;
     }
     static movementsMaxMap = new Map();
     static movementsTitleMap = new Map(movements.map(group => group.movements.map(mov => [mov.mid, mov.label])).flat());
@@ -987,10 +1008,15 @@ class ProgramContainer {
         );
 
         const headerContainer = getBrilliantElement('div', ['headerContainer']);
+        ShareContainer.initShareContainer();
         headerContainer.append(
-            getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
-            getProgramSelect(avaliablePrograms),
-            getBrilliantAnchorLinkList(programSetUp)
+            getBrilliantElement('div', ['titleBar'], [
+                getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
+                getProgramSelect(avaliablePrograms),
+            ]),
+            getBrilliantAnchorLinkList(programSetUp),
+            ShareContainer.shareContainer,
+            ProgramSettingsContainer.programSettingsContainer
         );
         this.appContainer.append(headerContainer, ProgramEditor.programEditorContainer, programContainer);
 

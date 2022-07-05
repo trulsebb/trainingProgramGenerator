@@ -71,7 +71,7 @@
                 text-align: center;
                 text-decoration: none;
                 font-size: inherit;
-                margin: 0.3em;
+                margin: 0.2em;
                 padding: 0.01em 0.2em;
                 filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 max-width: 15em;
@@ -92,6 +92,13 @@
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: center;
+            }
+            .titleBar {
+                justify-content: space-between;
+                display: flex;
+                flex-basis: 100%;
+                margin: 0.1em;
+                flex-wrap: wrap;
             }
             .programHeader {
                 /* flex-basis: 80%; */
@@ -123,15 +130,53 @@
                 padding: 0;
                 line-height: 1em;
             }
-            .linkList {
+            .buttonBar {
+                justify-content: space-between;
+                display: flex;
                 flex-basis: 100%;
+                margin: 0.1em;
+                flex-wrap: wrap;
+            }
+            .linkList {
+                display: flex;
+                justify-content: space-around;
+                flex-wrap: wrap;
             }
             .cyclelink {
                 color: black;
                 text-align: center;
                 text-decoration: none;
-                margin: 0.3em;
-                padding: 0.2em;
+                background-color: transparent;
+                margin: 0;
+                padding: 0;
+                font-size: small;
+                width: max-content;
+            }
+            .tightdiv {
+                width: fit-content;
+                flex-basis: content;
+                height: fit-content;
+                margin: 0.2em;
+                line-height: 2em;
+                padding: 0 0.1em;
+            }
+            .dayButtonList {
+                position: absolute;
+                background-color: inherit;
+                width: inherit;
+            }
+            .dayButton {
+                font-size: small;
+                width: max-content;
+                height: fit-content;
+            }
+            .dayButton:nth-child(even) {
+                background: #ffffff50;
+                filter: drop-shadow(0.2em 0.2em 0em #00000010);
+            }
+            .dayButton:nth-child(odd) {
+                background: #0000000d;
+                filter: drop-shadow(0.2em 0.2em 0em #00000010);
             }
             .shareLinkContainer {
                 flex-basis: 100%;
@@ -179,7 +224,7 @@
                 width: min-content;
                 padding: 0 0 0 0;
                 margin-bottom: 1em;
-                scroll-margin-top: 5em;
+                scroll-margin-top: 6em;
             }
             .dayContainer:nth-child(even) {
                 background: #ffffff50;
@@ -345,6 +390,6 @@
                 navigator.serviceWorker.register("/serviceworker.js");
             }
         </script>
-        <script src="miniapp.js"></script>
+        <script src="app.js"></script>
     </body>
 </html> 
