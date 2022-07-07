@@ -52,18 +52,22 @@ const movements = [
 
 const standardPrograms = [
     {
+        id: 0,
         title: "Basic training program",
         shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04w8084448k-2+48484A0c4448s-2+4c448-23Wkk484g0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04A8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04E8084448k-2+48484A0c4448s-2+4c448-23Wkk484g"
     },
     {
+        id: 1,
         title: "Swiss program",
         shareString: "kk0808084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21i8084448w-2+48484w0c4448E-2+4c448-23Wkk484g08k8084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21m8084448k-2+48484A0c4448s-2+4c448-23Wkk484g08I8084448k-2+48484A0c4448s-2+4c448-23Wkk484gs8084448w-2+48484w0c4448E-2+4c448-23Wkk484g08-21u8084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21q8084448k-2+48484w0c4448s-2+4c448-23Wkk484g08-21C8084448w-2+48484w0c4448E-2+4c448-23Wkk484g-21u8084448w-2+48484w0c4448E-2+4c448-23Wkk484g"
     },
     {
+        id: 2,
         title: "Oldschool linear",
         shareString: "oo04040c4448E-2+4c448-23Kgk448E-2+404w40c4448E-2+4c448-23Kgk448E-2+404840c4448E-2+4c448-23Kgk448E-2+404A40c4448E-2+4c448-23Kgk448E-2+404I40c4448E-2+4c448-23Kgk448E-2+404E40c4448E-2+4c448-23Kgk448E-2+4"
     },
     {
+        id: 3,
         title: "Advanzed program",
         shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04wk088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ak088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ek088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S"
     }
@@ -163,6 +167,7 @@ const getSavedPrograms = () => {
     const programList = getStoredKeys()
         .filter(skey => skey.match(/^program-/g))
         .map(k => ({
+            // TODO: add id from k "program-4-blablabla"
             title: k.substring('program-'.length),
             shareString: localStorage.getItem(k)
         }));
@@ -188,16 +193,18 @@ const getBrilliantElement = (type, classes, content) => {
 const getBrilliantRow = headerCellsContent => getBrilliantElement('tr', [], headerCellsContent.map(content => getBrilliantElement('td', [], content)));
 const getBrilliantHeaderRow = headerCellsContent => getBrilliantElement('tr', [], headerCellsContent.map(content => getBrilliantElement('th', [], content)));
 
-const getBrilliantCheckBox = () => {
+const getBrilliantCheckBox = (ariaLabel) => {
     const element = document.createElement('input');
     element.id = IdCreator.getUniqueId();
     element.onchange = () => saveSetting(element.id)(element.checked ? 1 : 0);
     element.setAttribute('type', 'checkBox');
     element.checked = getSetting(element.id)(0) === '1';
+    element.setAttribute('aria-label', ariaLabel);
+    element.setAttribute('title', ariaLabel);
     return element;
 }
 
-const getBrilliantNumberInput = (min, max, step, value) => {
+const getBrilliantNumberInput = (min, max, step, value, ariaLabel) => {
     const element = document.createElement('input');
     if (max < 100 && step == 1) {
         element.classList.add('smallInput');
@@ -209,14 +216,18 @@ const getBrilliantNumberInput = (min, max, step, value) => {
     element.min = min;
     element.max = max;
     element.step = step;
+    element.setAttribute('aria-label', ariaLabel);
+    element.setAttribute('title', ariaLabel);
     return element;
 };
 
-const getBrilliantDisabledInput = (value) => {
+const getBrilliantDisabledInput = (value, ariaLabel) => {
     const element = document.createElement('input');
     element.setAttribute('type', 'text');
     element.value = value;
     element.disabled = true;
+    element.setAttribute('aria-label', ariaLabel);
+    element.setAttribute('title', ariaLabel);
     return element;
 };
 
@@ -380,14 +391,14 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
             getBrilliantElement('caption', [], getMovementSelect(movement.movementId, `${currentIteration}-${dayIndex}${movementIndex}`)),
             getBrilliantHeaderRow(['', 'Reps', 'Goal RPE', '% of e1RM', 'Weight', 'Actual RPE', 'e1RM']),
             ...sets.map((set, setIndex) => {
-                const reps = getBrilliantNumberInput(0, 10, 1, set.reps(currentIteration));
-                const perc = getBrilliantDisabledInput((set.perc(currentIteration) !== null) ? `${set.perc(currentIteration)}%` : null);
+                const reps = getBrilliantNumberInput(0, 10, 1, set.reps(currentIteration), `Reps for set ${setIndex +1}`);
+                const perc = getBrilliantDisabledInput((set.perc(currentIteration) !== null) ? `${set.perc(currentIteration)}%` : null, `Percentage for set ${setIndex +1}`);
                 const weight = (set.perc(currentIteration) !== null) 
-                    ? getBrilliantDisabledInput(set.weight(currentIteration)) 
-                    : getBrilliantNumberInput(75, 1000, 2.5, set.weight(currentIteration));
-                const actualRpe = getBrilliantNumberInput(1, 11, 0.25, set.rpe(currentIteration));
-                const plannedRpe = getBrilliantDisabledInput(set.rpe(currentIteration));
-                const e1rm = getBrilliantDisabledInput('...');
+                    ? getBrilliantDisabledInput(set.weight(currentIteration), `Weight for set ${setIndex +1}`) 
+                    : getBrilliantNumberInput(75, 1000, 2.5, set.weight(currentIteration), `Weight for set ${setIndex +1}`);
+                const actualRpe = getBrilliantNumberInput(1, 11, 0.25, set.rpe(currentIteration), `Actual RPE for set ${setIndex +1}`);
+                const plannedRpe = getBrilliantDisabledInput(set.rpe(currentIteration), `Goal RPE for set ${setIndex +1}`);
+                const e1rm = getBrilliantDisabledInput('...', `Estimated 1RM for set ${setIndex +1}`);
                 if (set.perc(currentIteration) !== null) {
                     const updateByHighestE1rm = () => {
                             const settingsMax = ProgramSettingsContainer.movementsMaxMap.get(movement.movementId) ?? 0;
@@ -410,7 +421,7 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
                     e1rm.dispatchEvent(new Event('change'));
                 }));
                 
-                return getBrilliantRow([getBrilliantCheckBox(), reps, plannedRpe, perc, weight, actualRpe, e1rm]);
+                return getBrilliantRow([getBrilliantCheckBox(`Checkbox indicating done set for set ${setIndex +1}`), reps, plannedRpe, perc, weight, actualRpe, e1rm]);
             }).flat()
         ]);
         
@@ -769,7 +780,8 @@ class ProgramEditor {
     }
 }
 
-const getProgramSelect = (programSchemes) => {
+const getProgramSelect = () => {
+    const programSchemes = getAllAvaliablePrograms();
     const selectElement = getBrilliantElement('select', ['programselect']);
     selectElement.id = 9999;
     selectElement.value = 0;
@@ -982,7 +994,7 @@ class ProgramContainer {
         while (this.appContainer.firstChild) {
             this.appContainer.removeChild(this.appContainer.firstChild);
         }
-        //window.scrollTo({top: 0});
+        window.scrollTo({top: 0});
         const avaliablePrograms = getAllAvaliablePrograms();
         let rawProgramSetUp = avaliablePrograms[getSetting('9999')(0)];
         if (typeof sharedProgramSetUp === 'object') {
@@ -1012,7 +1024,7 @@ class ProgramContainer {
         headerContainer.append(
             getBrilliantElement('div', ['titleBar'], [
                 getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
-                getProgramSelect(avaliablePrograms),
+                getProgramSelect(),
             ]),
             getBrilliantAnchorLinkList(programSetUp),
             ShareContainer.shareContainer,
