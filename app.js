@@ -52,22 +52,28 @@ const movements = [
 
 const standardPrograms = [
     {
+        id: 0,
         title: "Basic training program",
         shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04w8084448k-2+48484A0c4448s-2+4c448-23Wkk484g0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04A8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04E8084448k-2+48484A0c4448s-2+4c448-23Wkk484g"
     },
     {
+        id: 1,
         title: "Swiss program",
         shareString: "kk0808084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21i8084448w-2+48484w0c4448E-2+4c448-23Wkk484g08k8084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21m8084448k-2+48484A0c4448s-2+4c448-23Wkk484g08I8084448k-2+48484A0c4448s-2+4c448-23Wkk484gs8084448w-2+48484w0c4448E-2+4c448-23Wkk484g08-21u8084448k-2+48484A0c4448s-2+4c448-23Wkk484g-21q8084448k-2+48484w0c4448s-2+4c448-23Wkk484g08-21C8084448w-2+48484w0c4448E-2+4c448-23Wkk484g-21u8084448w-2+48484w0c4448E-2+4c448-23Wkk484g"
     },
     {
+        id: 2,
         title: "Oldschool linear",
         shareString: "oo04040c4448E-2+4c448-23Kgk448E-2+404w40c4448E-2+4c448-23Kgk448E-2+404840c4448E-2+4c448-23Kgk448E-2+404A40c4448E-2+4c448-23Kgk448E-2+404I40c4448E-2+4c448-23Kgk448E-2+404E40c4448E-2+4c448-23Kgk448E-2+4"
     },
     {
+        id: 3,
         title: "Advanzed program",
         shareString: "ko0408084448k-2+48484A0c4448s-2+4c448-23Wkk484g04wk088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S0488084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ak088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S04I8084448k-2+48484A0c4448s-2+4c448-23Wkk484g04Ek088484Ac484-25a088484Ac484-25u088484Ac484-25O088484Ac484-268088484Ac484-23S"
     }
 ];
+
+const PROGRAMSELECT_ID = 9999;
 
 const maxFormula = (weight, reps) => weight * (36 / (37 - reps));
 const rpeBasedMax = wantedReps => weight => reps => rpe => maxFormula(weight, (reps + (11 - rpe - wantedReps)));
@@ -134,7 +140,7 @@ const parseShareString = shareString => shareString.split('-').map(b62 => getKey
 
 const autosaveProgress = () => {
     const dateString = new Date().toISOString().slice(0,10);
-    const previousSetting = getSetting('9999')(0);
+    const previousSetting = getSetting(PROGRAMSELECT_ID)(0);
     const stringToSave = getShareString();
     if (stringToSave.split('-').length > 1) {
         localStorage.setItem(`progress-${previousSetting}-${dateString}`, getShareString());
@@ -155,21 +161,34 @@ const getSetting = elementId => defaultValue => {
     return localStorage.getItem(elementId);
 };
 
+const getUniqueProgramId = () => {
+    let anId = 0;
+    do {
+        // Random int from 100 to 999, IDs 0-99 are reserved for built in programs
+        anId = Math.floor(Math.random() * 900 + 100);
+    } while (getStoredKeys().filter(k => k.match(new RegExp(`^program-${anId}`,"g"))).length > 0);
+    return anId;
+}
+
 const saveProgram = (programName, shareString) => {
-    localStorage.setItem(`program-${programName}`, shareString);
+    const anId = getUniqueProgramId();
+    localStorage.setItem(`program-${anId}-${programName}`, shareString);
 };
 
 const getSavedPrograms = () => {
     const programList = getStoredKeys()
         .filter(skey => skey.match(/^program-/g))
         .map(k => ({
-            title: k.substring('program-'.length),
+            id: Number(k.match(/^program-(\d+)/)[1]),
+            title: k.match(/^program-\d+-(.+)/)[1],
             shareString: localStorage.getItem(k)
         }));
     return programList;
 }
 
 const getAllAvaliablePrograms = () =>  [...standardPrograms, ...getSavedPrograms()];
+
+const getProgram = programId => getAllAvaliablePrograms().find(program => program.id == programId) ?? getProgram(0);
 
 // ui
 const getBrilliantElement = (type, classes, content) => {
@@ -188,16 +207,18 @@ const getBrilliantElement = (type, classes, content) => {
 const getBrilliantRow = headerCellsContent => getBrilliantElement('tr', [], headerCellsContent.map(content => getBrilliantElement('td', [], content)));
 const getBrilliantHeaderRow = headerCellsContent => getBrilliantElement('tr', [], headerCellsContent.map(content => getBrilliantElement('th', [], content)));
 
-const getBrilliantCheckBox = () => {
+const getBrilliantCheckBox = (ariaLabel) => {
     const element = document.createElement('input');
     element.id = IdCreator.getUniqueId();
     element.onchange = () => saveSetting(element.id)(element.checked ? 1 : 0);
     element.setAttribute('type', 'checkBox');
     element.checked = getSetting(element.id)(0) === '1';
+    element.setAttribute('aria-label', ariaLabel);
+    element.setAttribute('title', ariaLabel);
     return element;
 }
 
-const getBrilliantNumberInput = (min, max, step, value) => {
+const getBrilliantNumberInput = (min, max, step, value, ariaLabel) => {
     const element = document.createElement('input');
     if (max < 100 && step == 1) {
         element.classList.add('smallInput');
@@ -209,96 +230,116 @@ const getBrilliantNumberInput = (min, max, step, value) => {
     element.min = min;
     element.max = max;
     element.step = step;
+    element.setAttribute('aria-label', ariaLabel);
+    element.setAttribute('title', ariaLabel);
     return element;
 };
 
-const getBrilliantDisabledInput = (value) => {
+const getBrilliantDisabledInput = (value, ariaLabel) => {
     const element = document.createElement('input');
     element.setAttribute('type', 'text');
     element.value = value;
     element.disabled = true;
+    element.setAttribute('aria-label', ariaLabel);
+    element.setAttribute('title', ariaLabel);
     return element;
 };
 
-const getShareContainer = () => {
-    const hiddenShareLinkContainer = getBrilliantElement('div', ['shareLinkContainer']);
-    hiddenShareLinkContainer.hidden = true;
-    hiddenShareLinkContainer.addEventListener('toggleVisibility', () => { 
-        while (hiddenShareLinkContainer.firstChild) {
-            hiddenShareLinkContainer.removeChild(hiddenShareLinkContainer.firstChild);
+class ShareContainer {
+    static shareContainer = null;
+    static getShareButton = () => {
+        const shareLink = getBrilliantElement('button', [], '💾');
+        shareLink.onclick = () => {
+            this.shareContainer.dispatchEvent(new Event('toggleVisibility'));
+            this.shareContainer.hidden = !this.shareContainer.hidden;
         }
-        hiddenShareLinkContainer.append(
-            ...getStoredKeys()
-                .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}$/g))
-                .sort()
-                .map(k => {
-                    const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
-                    const removeButton = getBrilliantElement('button', ['clearButton'], '🗑');
-                    removeButton.onclick = () => {
-                        localStorage.removeItem(k);
-                        hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
-                    };
-                    const textBoxWithString = getBrilliantElement('input', ['presentedlink'], '');
-                    textBoxWithString.type = 'text';
-                    textBoxWithString.value = localStorage.getItem(k);
-                    const copyLinkButton = getBrilliantElement('button', [], 'Copy');
-                    copyLinkButton.onclick = () => {
-                        textBoxWithString.select();
-                        document.execCommand("copy");
-                    };
-                    const restoreButton = getBrilliantElement('button', [], 'Restore');
-                    restoreButton.onclick = () => {
-                        importFromShareString(textBoxWithString.value);
-                        ProgramContainer.renderProgram();
-                        //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}?${textBoxWithString.value}`;
-                    };
-                    shareStringContainer.append(removeButton, textBoxWithString, copyLinkButton, restoreButton);
-                    return shareStringContainer;
-                }
-            )
-        );
-        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
-        const saveSerializedButton = getBrilliantElement('button', [], 'Save current');
-        saveSerializedButton.onclick = () => {
-            autosaveProgress();
-            hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
-        }
-        const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
-        hideSettingsButton.onclick = () => { hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden; };
-        shareStringContainer.append(saveSerializedButton);
-        hiddenShareLinkContainer.append(shareStringContainer, hideSettingsButton);
-    });
-    return hiddenShareLinkContainer;
-};
+        return shareLink;
+    }
+    static initShareContainer = () => {
+        const hiddenShareLinkContainer = getBrilliantElement('div', ['shareLinkContainer']);
+        hiddenShareLinkContainer.hidden = true;
+        hiddenShareLinkContainer.addEventListener('toggleVisibility', () => { 
+            while (hiddenShareLinkContainer.firstChild) {
+                hiddenShareLinkContainer.removeChild(hiddenShareLinkContainer.firstChild);
+            }
+            const currentProgram = getSetting(PROGRAMSELECT_ID)(0);
+            const regularExp = new RegExp(`progress-${currentProgram}`, "g");
+            hiddenShareLinkContainer.append(
+                ...getStoredKeys()
+                    .filter(skey => skey.match(regularExp))
+                    .sort()
+                    .map(k => {
+                        const dateString = k.substring(k.length - 10);
+                        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], dateString));
+                        const removeButton = getBrilliantElement('button', ['clearButton'], '🗑');
+                        removeButton.onclick = () => {
+                            localStorage.removeItem(k);
+                            hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
+                        };
+                        const textBoxWithString = getBrilliantElement('input', ['presentedlink'], '');
+                        textBoxWithString.type = 'text';
+                        textBoxWithString.value = localStorage.getItem(k);
+                        const copyLinkButton = getBrilliantElement('button', [], 'Copy');
+                        copyLinkButton.onclick = () => {
+                            textBoxWithString.select();
+                            document.execCommand("copy");
+                        };
+                        const restoreButton = getBrilliantElement('button', [], 'Restore');
+                        restoreButton.onclick = () => {
+                            importFromShareString(textBoxWithString.value);
+                            ProgramContainer.renderProgram();
+                        };
+                        shareStringContainer.append(removeButton, textBoxWithString, copyLinkButton, restoreButton);
+                        return shareStringContainer;
+                    }
+                )
+            );
+            const shareStringContainer = getBrilliantElement('div', ['shareStringContainer']);
+            const saveSerializedButton = getBrilliantElement('button', [], 'Save current');
+            saveSerializedButton.onclick = () => {
+                autosaveProgress();
+                hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
+            }
+            const hideSettingsButton = getBrilliantElement('button', ['closebutton'], '▲ ▲ ▲');
+            hideSettingsButton.onclick = () => { hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden; };
+            shareStringContainer.append(saveSerializedButton);
+            hiddenShareLinkContainer.append(shareStringContainer, hideSettingsButton);
+        });
+        this.shareContainer = hiddenShareLinkContainer;
+    };
+}
 
 const getBrilliantAnchorLinkList = programScheme => {
     const iterations = [...Array(programScheme.numberOfIterations).keys()];
-    const linkList = getBrilliantElement('div', ['linkList']);
-    const programSettingsLink = getBrilliantElement('button', [], '🛠');
-    programSettingsLink.onclick = () => {
-        ProgramSettingsContainer.toggleVisibility();
-    }
-    const weekLinks = iterations.map(iteration => {
-        const link = getBrilliantElement('a', ['cyclelink', 'weekelement'], `Week${iteration + 1}`);
-        link.href = `#cycle${iteration}`;
-        return link;
-    });
-    const shareLink = getBrilliantElement('button', [], '💾');
-    const hiddenShareLinkContainer = getShareContainer();
-    shareLink.onclick = () => {
-        hiddenShareLinkContainer.dispatchEvent(new Event('toggleVisibility'));
-        hiddenShareLinkContainer.hidden = !hiddenShareLinkContainer.hidden;
-    }
+    const linkList = getBrilliantElement('div', ['linkList'], iterations.map(iteration => {
+        const anchorbuttonContainer = getBrilliantElement('div', ['tightdiv', 'weekelement']);
+        const link = getBrilliantElement('button', ['cyclelink'], `Week${iteration + 1}`);
+        const dayButtonList = getBrilliantElement('div', ['dayButtonList'])
+        dayButtonList.append(...[...Array(programScheme.days.length).keys()].map(dayIndex => {
+            const dayButton = getBrilliantElement('button', ['dayButton'], `Day ${dayIndex + 1}`);
+            dayButton.onclick = () => {
+                document.querySelector(`#day${iteration}-${dayIndex}`).scrollIntoView({
+                    behavior: 'smooth'
+                });
+                dayButtonList.hidden = true;
+            };
+            return dayButton;
+        }));
+        dayButtonList.hidden = true;
+        anchorbuttonContainer.append(link, dayButtonList);
+        link.onclick = () => {
+            dayButtonList.hidden = !dayButtonList.hidden;
+        }
+        return anchorbuttonContainer;
+    }));
     
-    linkList.append(
-        ...weekLinks, 
-        programSettingsLink,
-        shareLink, 
-        ProgramSettingsContainer.programSettingsContainer, 
-        hiddenShareLinkContainer
-    );
-    
-    return linkList;
+    return getBrilliantElement('div', ['buttonBar'], [
+        linkList,
+        getBrilliantElement('div', ['linklist'], [
+            ProgramSettingsContainer.getProgramSettingsButton(),
+            ShareContainer.getShareButton(),
+        ])
+    ]);
 };
 
 // +------------+----------+----+------------------+----+--------------------+
@@ -358,7 +399,7 @@ const getDumbMovementSelect = (defaultvalue) => {
 
 const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
     const dayContainer = getBrilliantElement('fieldset', ['dayContainer'], getBrilliantElement('legend', [], `Day ${dayIndex + 1}`));
-    dayContainer.id = `${currentIteration}-${dayIndex}`;
+    dayContainer.id = `day${currentIteration}-${dayIndex}`;
     dayContainer.append(...movements.map(((movement, movementIndex) => {
         const _setRefs = [];
         const sets = movement.sets.map(s => Array(s.repeat(currentIteration)).fill(s)).flat(); // [1,3,2] => [1,3,3,3,2,2]
@@ -366,14 +407,14 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
             getBrilliantElement('caption', [], getMovementSelect(movement.movementId, `${currentIteration}-${dayIndex}${movementIndex}`)),
             getBrilliantHeaderRow(['', 'Reps', 'Goal RPE', '% of e1RM', 'Weight', 'Actual RPE', 'e1RM']),
             ...sets.map((set, setIndex) => {
-                const reps = getBrilliantNumberInput(0, 10, 1, set.reps(currentIteration));
-                const perc = getBrilliantDisabledInput((set.perc(currentIteration) !== null) ? `${set.perc(currentIteration)}%` : null);
+                const reps = getBrilliantNumberInput(0, 10, 1, set.reps(currentIteration), `Reps for set ${setIndex +1}`);
+                const perc = getBrilliantDisabledInput((set.perc(currentIteration) !== null) ? `${set.perc(currentIteration)}%` : null, `Percentage for set ${setIndex +1}`);
                 const weight = (set.perc(currentIteration) !== null) 
-                    ? getBrilliantDisabledInput(set.weight(currentIteration)) 
-                    : getBrilliantNumberInput(75, 1000, 2.5, set.weight(currentIteration));
-                const actualRpe = getBrilliantNumberInput(1, 11, 0.25, set.rpe(currentIteration));
-                const plannedRpe = getBrilliantDisabledInput(set.rpe(currentIteration));
-                const e1rm = getBrilliantDisabledInput('...');
+                    ? getBrilliantDisabledInput(set.weight(currentIteration), `Weight for set ${setIndex +1}`) 
+                    : getBrilliantNumberInput(75, 1000, 2.5, set.weight(currentIteration), `Weight for set ${setIndex +1}`);
+                const actualRpe = getBrilliantNumberInput(1, 11, 0.25, set.rpe(currentIteration), `Actual RPE for set ${setIndex +1}`);
+                const plannedRpe = getBrilliantDisabledInput(set.rpe(currentIteration), `Goal RPE for set ${setIndex +1}`);
+                const e1rm = getBrilliantDisabledInput('...', `Estimated 1RM for set ${setIndex +1}`);
                 if (set.perc(currentIteration) !== null) {
                     const updateByHighestE1rm = () => {
                             const settingsMax = ProgramSettingsContainer.movementsMaxMap.get(movement.movementId) ?? 0;
@@ -396,7 +437,7 @@ const getSessionMovementTable = (currentIteration, dayIndex, movements) => {
                     e1rm.dispatchEvent(new Event('change'));
                 }));
                 
-                return getBrilliantRow([getBrilliantCheckBox(), reps, plannedRpe, perc, weight, actualRpe, e1rm]);
+                return getBrilliantRow([getBrilliantCheckBox(`Checkbox indicating done set for set ${setIndex +1}`), reps, plannedRpe, perc, weight, actualRpe, e1rm]);
             }).flat()
         ]);
         
@@ -419,6 +460,13 @@ class ProgramSettingsContainer {
     static programSettingsContainer = getBrilliantElement('div', ['programSettingsContainer']);
     static toggleVisibility = () => {
         this.programSettingsContainer.hidden = !this.programSettingsContainer.hidden;
+    }
+    static getProgramSettingsButton = () => {
+        const programSettingsLink = getBrilliantElement('button', [], '🛠');
+        programSettingsLink.onclick = () => {
+            this.toggleVisibility();
+        }
+        return programSettingsLink;
     }
     static movementsMaxMap = new Map();
     static movementsTitleMap = new Map(movements.map(group => group.movements.map(mov => [mov.mid, mov.label])).flat());
@@ -748,15 +796,16 @@ class ProgramEditor {
     }
 }
 
-const getProgramSelect = (programSchemes) => {
+const getProgramSelect = () => {
+    const programSchemes = getAllAvaliablePrograms();
     const selectElement = getBrilliantElement('select', ['programselect']);
-    selectElement.id = 9999;
+    selectElement.id = PROGRAMSELECT_ID;
     selectElement.value = 0;
     selectElement.onchange = () => {
         autosaveProgress();
         removeStoredInputKeys();
         saveSetting(selectElement.id)(selectElement.value);
-        ProgramContainer.renderProgram(programSchemes[selectElement.value]);
+        ProgramContainer.renderProgram(getProgram(selectElement.value));
     };
     const hamburgerOption = getBrilliantElement('option', [], '≡');
     hamburgerOption.disabled = true;
@@ -765,7 +814,7 @@ const getProgramSelect = (programSchemes) => {
 
     selectElement.append(...programSchemes.map((programScheme, index) => {
         const option = getBrilliantElement('option', [], programScheme.title);
-        option.value = index;
+        option.value = programScheme.id;
         return option;
     }));
     return selectElement;
@@ -961,9 +1010,8 @@ class ProgramContainer {
         while (this.appContainer.firstChild) {
             this.appContainer.removeChild(this.appContainer.firstChild);
         }
-        //window.scrollTo({top: 0});
-        const avaliablePrograms = getAllAvaliablePrograms();
-        let rawProgramSetUp = avaliablePrograms[getSetting('9999')(0)];
+        window.scrollTo({top: 0});
+        let rawProgramSetUp = getProgram(getSetting(PROGRAMSELECT_ID)(0));
         if (typeof sharedProgramSetUp === 'object') {
             rawProgramSetUp = sharedProgramSetUp;
         }
@@ -976,7 +1024,7 @@ class ProgramContainer {
         const iterations = [...Array(programSetUp.numberOfIterations).keys()];
         programContainer.append(
             ...iterations.map(currentIteration => {
-                const cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
+                const cycleHeader = getBrilliantElement('h2', ['weekHeader'], `Week ${currentIteration + 1}`)
                 const cycleContainer = getBrilliantElement('div', ['blockContainer', 'weekelement'], cycleHeader);
                 cycleContainer.id = `cycle${currentIteration}`;
                 cycleContainer.append(
@@ -987,10 +1035,15 @@ class ProgramContainer {
         );
 
         const headerContainer = getBrilliantElement('div', ['headerContainer']);
+        ShareContainer.initShareContainer();
         headerContainer.append(
-            getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
-            getProgramSelect(avaliablePrograms),
-            getBrilliantAnchorLinkList(programSetUp)
+            getBrilliantElement('div', ['titleBar'], [
+                getProgramSelect(),
+                getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title)
+            ]),
+            getBrilliantAnchorLinkList(programSetUp),
+            ShareContainer.shareContainer,
+            ProgramSettingsContainer.programSettingsContainer
         );
         this.appContainer.append(headerContainer, ProgramEditor.programEditorContainer, programContainer);
 
@@ -1002,7 +1055,7 @@ class ProgramContainer {
 }
 
 // add stuff to document
-if (typeof getSetting('9999')() === 'undefined') {
-    saveSetting('9999')(0);
+if (typeof getSetting(PROGRAMSELECT_ID)() === 'undefined') {
+    saveSetting(PROGRAMSELECT_ID)(0);
 }
 ProgramContainer.renderProgram();
