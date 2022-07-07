@@ -73,6 +73,8 @@ const standardPrograms = [
     }
 ];
 
+const PROGRAMSELECT_ID = 9999;
+
 const maxFormula = (weight, reps) => weight * (36 / (37 - reps));
 const rpeBasedMax = wantedReps => weight => reps => rpe => maxFormula(weight, (reps + (11 - rpe - wantedReps)));
 const oneRepMax = rpeBasedMax(1);
@@ -138,7 +140,7 @@ const parseShareString = shareString => shareString.split('-').map(b62 => getKey
 
 const autosaveProgress = () => {
     const dateString = new Date().toISOString().slice(0,10);
-    const previousSetting = getSetting('9999')(0);
+    const previousSetting = getSetting(PROGRAMSELECT_ID)(0);
     const stringToSave = getShareString();
     if (stringToSave.split('-').length > 1) {
         localStorage.setItem(`progress-${previousSetting}-${dateString}`, getShareString());
@@ -159,22 +161,34 @@ const getSetting = elementId => defaultValue => {
     return localStorage.getItem(elementId);
 };
 
+const getUniqueProgramId = () => {
+    let anId = 0;
+    do {
+        // Random int from 100 to 999, IDs 0-99 are reserved for built in programs
+        anId = Math.floor(Math.random() * 900 + 100);
+    } while (getStoredKeys().filter(k => k.match(new RegExp(`^program-${anId}`,"g"))).length > 0);
+    return anId;
+}
+
 const saveProgram = (programName, shareString) => {
-    localStorage.setItem(`program-${programName}`, shareString);
+    const anId = getUniqueProgramId();
+    localStorage.setItem(`program-${anId}-${programName}`, shareString);
 };
 
 const getSavedPrograms = () => {
     const programList = getStoredKeys()
         .filter(skey => skey.match(/^program-/g))
         .map(k => ({
-            // TODO: add id from k "program-4-blablabla"
-            title: k.substring('program-'.length),
+            id: Number(k.match(/^program-(\d+)/)[1]),
+            title: k.match(/^program-\d+-(.+)/)[1],
             shareString: localStorage.getItem(k)
         }));
     return programList;
 }
 
 const getAllAvaliablePrograms = () =>  [...standardPrograms, ...getSavedPrograms()];
+
+const getProgram = programId => getAllAvaliablePrograms().find(program => program.id == programId) ?? getProgram(0);
 
 // ui
 const getBrilliantElement = (type, classes, content) => {
@@ -248,12 +262,15 @@ class ShareContainer {
             while (hiddenShareLinkContainer.firstChild) {
                 hiddenShareLinkContainer.removeChild(hiddenShareLinkContainer.firstChild);
             }
+            const currentProgram = getSetting(PROGRAMSELECT_ID)(0);
+            const regularExp = new RegExp(`progress-${currentProgram}`, "g");
             hiddenShareLinkContainer.append(
                 ...getStoredKeys()
-                    .filter(skey => skey.match(/\d{4}-\d{2}-\d{2}$/g))
+                    .filter(skey => skey.match(regularExp))
                     .sort()
                     .map(k => {
-                        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], k));
+                        const dateString = k.substring(k.length - 10);
+                        const shareStringContainer = getBrilliantElement('div', ['shareStringContainer'], getBrilliantElement('label', ['shareStringLabel'], dateString));
                         const removeButton = getBrilliantElement('button', ['clearButton'], '🗑');
                         removeButton.onclick = () => {
                             localStorage.removeItem(k);
@@ -271,7 +288,6 @@ class ShareContainer {
                         restoreButton.onclick = () => {
                             importFromShareString(textBoxWithString.value);
                             ProgramContainer.renderProgram();
-                            //window.location.href = `${location.protocol}//${window.location.host}${window.location.pathname}?${textBoxWithString.value}`;
                         };
                         shareStringContainer.append(removeButton, textBoxWithString, copyLinkButton, restoreButton);
                         return shareStringContainer;
@@ -783,13 +799,13 @@ class ProgramEditor {
 const getProgramSelect = () => {
     const programSchemes = getAllAvaliablePrograms();
     const selectElement = getBrilliantElement('select', ['programselect']);
-    selectElement.id = 9999;
+    selectElement.id = PROGRAMSELECT_ID;
     selectElement.value = 0;
     selectElement.onchange = () => {
         autosaveProgress();
         removeStoredInputKeys();
         saveSetting(selectElement.id)(selectElement.value);
-        ProgramContainer.renderProgram(programSchemes[selectElement.value]);
+        ProgramContainer.renderProgram(getProgram(selectElement.value));
     };
     const hamburgerOption = getBrilliantElement('option', [], '≡');
     hamburgerOption.disabled = true;
@@ -798,7 +814,7 @@ const getProgramSelect = () => {
 
     selectElement.append(...programSchemes.map((programScheme, index) => {
         const option = getBrilliantElement('option', [], programScheme.title);
-        option.value = index;
+        option.value = programScheme.id;
         return option;
     }));
     return selectElement;
@@ -995,8 +1011,7 @@ class ProgramContainer {
             this.appContainer.removeChild(this.appContainer.firstChild);
         }
         window.scrollTo({top: 0});
-        const avaliablePrograms = getAllAvaliablePrograms();
-        let rawProgramSetUp = avaliablePrograms[getSetting('9999')(0)];
+        let rawProgramSetUp = getProgram(getSetting(PROGRAMSELECT_ID)(0));
         if (typeof sharedProgramSetUp === 'object') {
             rawProgramSetUp = sharedProgramSetUp;
         }
@@ -1009,7 +1024,7 @@ class ProgramContainer {
         const iterations = [...Array(programSetUp.numberOfIterations).keys()];
         programContainer.append(
             ...iterations.map(currentIteration => {
-                const cycleHeader = getBrilliantElement('h2', [], `Week ${currentIteration + 1}`)
+                const cycleHeader = getBrilliantElement('h2', ['weekHeader'], `Week ${currentIteration + 1}`)
                 const cycleContainer = getBrilliantElement('div', ['blockContainer', 'weekelement'], cycleHeader);
                 cycleContainer.id = `cycle${currentIteration}`;
                 cycleContainer.append(
@@ -1023,8 +1038,8 @@ class ProgramContainer {
         ShareContainer.initShareContainer();
         headerContainer.append(
             getBrilliantElement('div', ['titleBar'], [
-                getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title), 
                 getProgramSelect(),
+                getBrilliantElement('h1', ['programHeader'], rawProgramSetUp.title)
             ]),
             getBrilliantAnchorLinkList(programSetUp),
             ShareContainer.shareContainer,
@@ -1040,7 +1055,7 @@ class ProgramContainer {
 }
 
 // add stuff to document
-if (typeof getSetting('9999')() === 'undefined') {
-    saveSetting('9999')(0);
+if (typeof getSetting(PROGRAMSELECT_ID)() === 'undefined') {
+    saveSetting(PROGRAMSELECT_ID)(0);
 }
 ProgramContainer.renderProgram();
