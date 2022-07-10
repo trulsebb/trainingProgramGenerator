@@ -45,7 +45,7 @@
                 font-size: medium;
                 padding: 0.1em 0.5em;
                 background-color: #ffffff80;
-                /* border-radius: 0.5em; */
+                border-radius: 0.5em;
             }
             input[type=number] {
                 max-width: 4.5em;
@@ -98,6 +98,7 @@
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: center;
+                box-shadow: 0 0 0.5em navy;
             }
             .titleBar {
                 justify-content: space-between;
@@ -115,8 +116,8 @@
                 color: black;
                 filter: drop-shadow(0.1em 0.1em 0em #d46ce7d0);
                 /* display: inline-block; */
-                font-size: x-large;
-                max-width: 15em;
+                font-size: large;
+                /* max-width: 15em; */
                 margin: auto;
             }
             .programselect {
@@ -136,6 +137,28 @@
                 line-height: 1em;
                 display: inline-block;
             }
+            .settingsMenuButton {
+                font-family: sans-serif;
+                filter: drop-shadow(0.11em 0.11em 0em #d46ce7d0);
+                font-size: x-large;
+                padding: 0 0.1em;
+                width: 1.5em;
+            }
+            .settingsMenu {
+                display: flex;
+                flex-wrap: inherit;
+                flex-basis: 100%;
+                background-color: #0000001d;
+            }
+            .menuButton {
+                font-size: large;
+                /* filter: none; */
+                /* border: 1px solid #d46ce7d0; */
+                /* margin: 0; */
+            }
+            .createNewProgramButton {
+                background-color: lightgreen;
+            }
             .buttonBar {
                 justify-content: space-between;
                 display: flex;
@@ -145,8 +168,9 @@
             }
             .linkList {
                 display: flex;
-                justify-content: space-around;
+                justify-content: flex-start;
                 flex-wrap: wrap;
+                flex-basis: 100%;
             }
             .cyclelink {
                 color: black;
@@ -212,6 +236,19 @@
                 background-color: transparent;
                 font-family: sans-serif;
             }
+            .selectProgramContainer {
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+                /* justify-content: space-between; */
+                z-index: 1;
+                background: linear-gradient(to right, #6ce3e7, #a0b0f8);
+            }
+            .programSelectRow {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
             .weekHeader {
                 margin: 0 0 0.7em 0;
             }
@@ -230,10 +267,11 @@
             }
             .dayContainer {
                 border: 0;
-                /* border-radius: 0.5em; */
-                width: min-content;
+                border-radius: 0.5em;
+                /* width: min-content; */
+                width: 100%;
                 padding: 0 0 0 0;
-                margin-bottom: 1em;
+                margin: 0.5em auto;
                 scroll-margin-top: 6em;
             }
             .dayContainer:nth-child(even) {
@@ -260,7 +298,7 @@
             }
             .blockContainer {
                 padding: 0.5em;
-                /* border-radius: 0.5em; */
+                border-radius: 0.5em;
                 margin: 0.5em;
                 scroll-margin-top: 5em;
                 height: fit-content;
@@ -276,14 +314,41 @@
                 flex-direction: column;
                 align-items: center;
             }
+            .innerDayEdit {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .restDayText {
+                margin: 0.6em;
+            }
             .editorFieldBox {
                 display: flex;
                 justify-content: space-between;
-                padding: 0 1em;
+                padding: 0.2em;
                 max-width: 30em;
+                width: 80%;
+            }
+            .paramsContainer {
+                width: 100%;
+            }
+            .paramBox {
+                display: flex;
+                justify-content: space-between;
             }
             .programSettingsContainer {
+                /* flex-basis: 100%; */
+                display: flex;
+                flex-direction: column;
+            }
+            .setParamButtonList {
                 flex-basis: 100%;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .addParamButton {
+                font-size: medium;
+                background-color: palegreen;
             }
             .closebutton {
                 display: block;
@@ -309,16 +374,20 @@
                 flex-wrap: wrap;
                 flex-direction: column;
                 align-content: flex-start;
+                flex-basis: 100%;
+                width: 100%;
             }
             .dayEditContainer {
                 display: flex;
                 flex-direction: row;
-                justify-content: center;
+                justify-content: flex-start;
                 flex-wrap: wrap;
                 border: 0;
-                /* border-radius: 0.5em; */
+                border-radius: 0.5em;
                 padding: 0 0 0 0;
                 margin-bottom: 1em;
+                flex-grow: 1;
+                width: 100%;
             }
             .dayEditContainer:nth-child(even) {
                 background-image: linear-gradient(
@@ -333,6 +402,9 @@
                     transparent 50%, #EE617D20 50%, #EE617D20 75%, 
                     transparent 75%, transparent 100%);
                 background-size: 1em 1em;
+            }
+            .dayEditLegend {
+                margin: 0;
             }
             .setContainer {
                 display: flex;
